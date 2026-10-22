@@ -35,6 +35,7 @@ MPEG=qscale=4 ab=192k vcodec=mpeg2video acodec=mp2 threads=%threads;mpg
 
 [timelinepreview]
 # timeline preview settings should be MLT type parameters, like: vcodec=libx264
+Reels 1080x1920 60fps (VideoToolbox)=r=60 s=1080x1920 c:v=h264_videotoolbox g=1 bf=0 vprofile=main preset=fast progressive=1;mp4
 DNxHD 1080p 23.976fps=r=23.976 s=1920x1080 vb=36M threads=0 vcodec=dnxhd progressive=1;mov
 DNxHD 1080p 24fps=r=24 s=1920x1080 vb=36M threads=0 vcodec=dnxhd progressive=1;mov
 DNxHD 1080p 25fps=r=25 s=1920x1080 vb=36M threads=0 vcodec=dnxhd progressive=1;mov

@@ -21985,7 +21985,7 @@ msgid ""
 "Your project file was modified by Kdenlive.\n"
 "To make sure you do not lose data, a backup copy called %1 was created."
 msgstr ""
-"Seu arquivo de projeto foi modificado pelo Kdenlive.\n"
+"Seu arquivo de projeto foi modificado pelo MEditor.\n"
 "Para garantir que não haverá perdas de dados, uma cópia de segurança chamada "
 "%1 foi criada."
 
@@ -22941,7 +22941,7 @@ msgid ""
 "When enabled, Kdenlive will import all clips contained in the folder and its "
 "subfolders without creating the subfolders in Project Bin."
 msgstr ""
-"Quando habilitado, o Kdenlive importará todos os clipes dentro da pasta e "
+"Quando habilitado, o MEditor importará todos os clipes dentro da pasta e "
 "suas subpastas sem criar as subpastas na biblioteca multimídia do projeto."
 
 #: src/bin/mediabrowser.cpp:221 src/dialogs/clipcreationdialog.cpp:455
@@ -22961,7 +22961,7 @@ msgid ""
 "When enabled, Kdenlive will look for other images with the same name pattern "
 "and import them as an image sequence."
 msgstr ""
-"Quando habilitado, o Kdenlive procurará por outras imagens com o mesmo "
+"Quando habilitado, o MEditor procurará por outras imagens com o mesmo "
 "padrão de nome e irá importá-las como uma sequência de imagens."
 
 #: src/bin/model/markerlistmodel.cpp:82
@@ -23432,7 +23432,7 @@ msgid ""
 "Kdenlive crashed on last startup.\n"
 "Do you want to disable experimental GPU processing (Movit) ?"
 msgstr ""
-"Kdenlive travou durante a última inicialização.\n"
+"MEditor travou durante a última inicialização.\n"
 "Gostaria de desabilitar o processamento experimental via GPU (Movit)?"
 
 #: src/core.cpp:175
@@ -23452,7 +23452,7 @@ msgid ""
 "The default profile of Kdenlive is not set or invalid, press OK to set it to "
 "a correct value."
 msgstr ""
-"O perfil padrão do Kdenlive não está definido ou é inválido, pressione OK "
+"O perfil padrão do MEditor não está definido ou é inválido, pressione OK "
 "para defini-lo como um valor correto."
 
 #: src/core.cpp:465
@@ -23474,7 +23474,7 @@ msgid ""
 "can change this from Kdenlive's settings panel"
 msgstr ""
 "O perfil fornecido é inválido. O padrão é o perfil \"dv_pal\", mas vocêpode "
-"alterar isto no painel de configurações do Kdenlive"
+"alterar isto no painel de configurações do MEditor"
 
 #: src/core.cpp:793
 #, kde-format
@@ -24817,7 +24817,7 @@ msgstr "Não fazer nada"
 #: src/dialogs/renderwidget.cpp:545
 #, kde-format
 msgid "Close Kdenlive"
-msgstr "Fechar o Kdenlive"
+msgstr "Fechar o MEditor"
 
 #: src/dialogs/renderwidget.cpp:550
 #, kde-format
@@ -25475,7 +25475,7 @@ msgstr "Favor selecionar um perfil de vídeo"
 #: src/dialogs/settings/kdenlivesettingsdialog.cpp:1532
 #, kde-format
 msgid "Kdenlive must be restarted to change this setting"
-msgstr "O Kdenlive deve ser reiniciado para alterar esta definição"
+msgstr "O MEditor deve ser reiniciado para alterar esta definição"
 
 #: src/dialogs/settings/kdenlivesettingsdialog.cpp:1660
 #: src/effects/effectstack/view/collapsibleeffectview.cpp:695
@@ -25726,12 +25726,12 @@ msgstr "Feito pela KDE"
 #: src/dialogs/Simplesplash.qml:146 src/dialogs/Splash.qml:632 src/main.cpp:289
 #, kde-format
 msgid "Kdenlive"
-msgstr "Kdenlive"
+msgstr "MEditor"
 
 #: src/dialogs/Simplesplash.qml:196
 #, kde-format
 msgid "Kdenlive crashed on last start."
-msgstr "O Kdenlive travou na última inicialização."
+msgstr "O MEditor travou na última inicialização."
 
 #: src/dialogs/Simplesplash.qml:205
 #, kde-format
@@ -25749,7 +25749,7 @@ msgid ""
 "Kdenlive was upgraded. If you like it, consider <a href=\"%1\">getting "
 "involved</a> or help <a href=\"%2\">funding</a>."
 msgstr ""
-"O Kdenlive foi atualizado. Se você gostou, considere <a href="
+"O MEditor foi atualizado. Se você gostou, considere <a href="
 "\"%1\">participar do projeto</a> ou ajudar <a href=\"%2\">financeiramente</"
 "a>."
 
@@ -26551,13 +26551,13 @@ msgstr "Mostrar na inicialização"
 #, kde-format
 msgid "Kdenlive crashed on last start. Reset config and restart?"
 msgstr ""
-"Kdenlive travou durante a última inicialização. Redefinir configuração e "
+"MEditor travou durante a última inicialização. Redefinir configuração e "
 "reiniciar?"
 
 #: src/dialogs/Splash.qml:736
 #, kde-format
 msgid "Help us make Kdenlive even better"
-msgstr "Ajude-nos a tornar o Kdenlive ainda melhor"
+msgstr "Ajude-nos a tornar o MEditor ainda melhor"
 
 #: src/dialogs/Splash.qml:741
 #, kde-format
@@ -26572,7 +26572,7 @@ msgstr "Doar..."
 #: src/dialogs/Splash.qml:800
 #, kde-format
 msgid "<h3>Welcome to Kdenlive Quick Setup</h3>"
-msgstr "<h3>Bem-vindo à configuração rápida do Kdenlive</h3>"
+msgstr "<h3>Bem-vindo à configuração rápida do MEditor</h3>"
 
 #: src/dialogs/Splash.qml:806
 #, kde-format
@@ -26680,7 +26680,7 @@ msgid ""
 "frame."
 msgstr ""
 "Cria uma nova legenda com o comprimento padrão (definido em "
-"<interface>Configurações->Configurar o Kdenlive…->Diversos</interface>) na "
+"<interface>Configurações->Configurar o MEditor…->Diversos</interface>) na "
 "posição/quadro atual do indicador de reprodução."
 
 #: src/dialogs/subtitleedit.cpp:292
@@ -27203,12 +27203,12 @@ msgstr "Não foi possível ler o arquivo %1."
 #, kde-format
 msgctxt "@title:window"
 msgid "Welcome to Kdenlive"
-msgstr "Bem-vindo ao Kdenlive"
+msgstr "Bem-vindo ao MEditor"
 
 #: src/dialogs/wizard.cpp:69
 #, kde-format
 msgid "Welcome to Kdenlive %1"
-msgstr "Bem-vindo ao Kdenlive %1"
+msgstr "Bem-vindo ao MEditor %1"
 
 #: src/dialogs/wizard.cpp:70
 #, kde-format
@@ -27339,7 +27339,7 @@ msgid ""
 "many icons used in Kdenlive. Install recommended</li>"
 msgstr ""
 "<li>Pacote faltante: Ícones <b>Breeze</b> (breeze-icon-theme)<br/>fornece "
-"muitos ícones usados no Kdenlive. Sua instalação é recomendada</li>"
+"muitos ícones usados no MEditor. Sua instalação é recomendada</li>"
 
 #: src/dialogs/wizard.cpp:382
 #, kde-format
@@ -27430,7 +27430,7 @@ msgid ""
 "Your MLT installation cannot be found. Install MLT and restart Kdenlive.\n"
 msgstr ""
 "A Instalação do MLT não pode ser encontrada. Instale o MLT e reinicie o "
-"Kdenlive.\n"
+"MEditor.\n"
 
 #: src/dialogs/wizard.cpp:686
 #, kde-format
@@ -27729,7 +27729,7 @@ msgid ""
 "able to correctly open the document."
 msgstr ""
 "O documento foi criado no idioma \"%1\", que não está instalado no seu "
-"sistema. O Kdenlive pode não conseguir abrir corretamente o documento até "
+"sistema. O MEditor pode não conseguir abrir corretamente o documento até "
 "que o pacote do idioma esteja instalado."
 
 #: src/doc/documentvalidator.cpp:122
@@ -27759,8 +27759,8 @@ msgid ""
 "Please consider upgrading your Kdenlive version."
 msgstr ""
 "Este projeto não é suportado porque a versão do documento (%1) é mais "
-"recente do que a versão suportada por esta versão do Kdenlive (versão %2 e "
-"anteriores). Considere atualizar sua versão do Kdenlive."
+"recente do que a versão suportada por esta versão do MEditor (versão %2 e "
+"anteriores). Considere atualizar sua versão do MEditor."
 
 #: src/doc/documentvalidator.cpp:221 src/doc/documentvalidator.cpp:230
 #, kde-format
@@ -27866,12 +27866,12 @@ msgstr ""
 #: src/doc/kdenlivedoc.cpp:232
 #, kde-format
 msgid "File %1 is not a Kdenlive project file"
-msgstr "O arquivo %1 não é um arquivo de projeto do Kdenlive"
+msgstr "O arquivo %1 não é um arquivo de projeto do MEditor"
 
 #: src/doc/kdenlivedoc.cpp:239
 #, kde-format
 msgid "File %1 is not a valid Kdenlive project file."
-msgstr "O arquivo %1 não é um arquivo de projeto Kdenlive válido."
+msgstr "O arquivo %1 não é um arquivo de projeto MEditor válido."
 
 #: src/doc/kdenlivedoc.cpp:252
 #, kde-format
@@ -27879,7 +27879,7 @@ msgid ""
 "GPU acceleration is turned off in Kdenlive settings, but is required for "
 "this project's Movit filters."
 msgstr ""
-"A aceleração da GPU está desativada nas configurações do Kdenlive, mas é "
+"A aceleração da GPU está desativada nas configurações do MEditor, mas é "
 "necessária para os filtros Movit deste projeto."
 
 #: src/doc/kdenlivedoc.cpp:295
@@ -27920,7 +27920,7 @@ msgid ""
 "To make sure you do not lose data, a backup copy called %1 was created."
 msgstr ""
 "Seu arquivo de projeto foi atualizado para a última versão de arquivos do "
-"Kdenlive.\n"
+"MEditor.\n"
 "Para garantir que não haverá perdas de dados, uma cópia de segurança chamada "
 "%1 foi criada."
 
@@ -27931,7 +27931,7 @@ msgid ""
 "it was not possible to create the backup copy %1."
 msgstr ""
 "Seu arquivo de projeto foi atualizado para a última versão de arquivos do "
-"Kdenlive, não foi possível criar a cópia de segurança %1."
+"MEditor, não foi possível criar a cópia de segurança %1."
 
 #: src/doc/kdenlivedoc.cpp:985 src/project/projectmanager.cpp:1643
 #: src/project/projectmanager.cpp:1687
@@ -28190,7 +28190,7 @@ msgstr "Todos os arquivos"
 #: src/effects/effectlist/view/effectlistwidget.cpp:174
 #, kde-format
 msgid "Kdenlive Effect definitions"
-msgstr "Definições de efeitos do Kdenlive"
+msgstr "Definições de efeitos do MEditor"
 
 #: src/effects/effectlist/view/effectlistwidget.cpp:179
 #, kde-format
@@ -28875,7 +28875,7 @@ msgstr "A imagem é muito pequena para ser feita de proxy."
 msgid "FFmpeg not found, please set path in Kdenlive's settings Environment"
 msgstr ""
 "FFmpeg não encontrado, defina o caminho nas configurações de Ambiente do "
-"Kdenlive"
+"MEditor"
 
 #: src/jobs/proxytask.cpp:433 src/jobs/proxytask.cpp:447
 #, kde-format
@@ -28903,7 +28903,7 @@ msgstr "Não foi possível analisar este tipo de clipe."
 msgid "FFmpeg not found, please set path in Kdenlive's settings Environment."
 msgstr ""
 "FFmpeg não encontrado, defina o caminho nas configurações de Ambiente do "
-"Kdenlive."
+"MEditor."
 
 #: src/jobs/scenesplittask.cpp:184 src/jobs/scenesplittask.cpp:198
 #: src/jobs/scenesplittask.cpp:219 src/jobs/scenesplittask.cpp:228
@@ -29307,7 +29307,7 @@ msgstr "Importar layout"
 #: src/layouts/layoutmanagerdialog.cpp:285
 #, kde-format
 msgid "Kdenlive Layout (*.json)"
-msgstr "Layout do Kdenlive (*.json)"
+msgstr "Layout do MEditor (*.json)"
 
 #: src/layouts/layoutmanagerdialog.cpp:231
 #, kde-format
@@ -29809,7 +29809,7 @@ msgstr "Renderizar projeto diretamente e sair."
 #, kde-format
 msgid "Kdenlive render preset name (MP4-H264/AAC will be used if none given)."
 msgstr ""
-"Nome da predefinição de renderização do Kdenlive (MP4-H264/AAC será usado se "
+"Nome da predefinição de renderização do MEditor (MP4-H264/AAC será usado se "
 "nenhum for inserido)."
 
 #: src/main.cpp:356
@@ -29845,13 +29845,13 @@ msgstr "Salvar um relatório JSON sobre os componentes no caminho especificado."
 msgid ""
 "Verify whether a Kdenlive project file is valid, print details, and exit."
 msgstr ""
-"Verifica se um arquivo de projeto do Kdenlive é válido, exibe os detalhes e "
+"Verifica se um arquivo de projeto do MEditor é válido, exibe os detalhes e "
 "encerra."
 
 #: src/main.cpp:371
 #, kde-format
 msgid "Kdenlive document to open."
-msgstr "Documento do Kdenlive para abrir."
+msgstr "Documento do MEditor para abrir."
 
 #: src/main.cpp:372
 #, kde-format
@@ -30156,7 +30156,7 @@ msgid ""
 "This will delete Kdenlive's configuration file and restart the application. "
 "Do you want to proceed?"
 msgstr ""
-"Isso excluirá o arquivo de configuração do Kdenlive e reiniciará o "
+"Isso excluirá o arquivo de configuração do MEditor e reiniciará o "
 "aplicativo. Você quer prosseguir?"
 
 #: src/mainwindow.cpp:1663
@@ -30469,7 +30469,7 @@ msgid ""
 "Your Kdenlive version is older than 1 year, we strongly encourage you to "
 "upgrade"
 msgstr ""
-"Sua versão do Kdenlive é mais antiga que 1 ano. Procurar atualizações é "
+"Sua versão do MEditor é mais antiga que 1 ano. Procurar atualizações é "
 "fortemente recomendado"
 
 #: src/mainwindow.cpp:4049
@@ -30477,7 +30477,7 @@ msgstr ""
 msgid ""
 "Your Kdenlive version is older than 6 months, we encourage you to upgrade"
 msgstr ""
-"Sua versão do Kdenlive é mais antiga que 6 meses. Procurar atualizações é "
+"Sua versão do MEditor é mais antiga que 6 meses. Procurar atualizações é "
 "recomendado"
 
 #: src/mainwindow.cpp:4091
@@ -32538,7 +32538,7 @@ msgid ""
 "restart Kdenlive"
 msgstr ""
 "O filtro alphagrad é necessário para esse recurso, instale o frei0r e "
-"reinicie o Kdenlive"
+"reinicie o MEditor"
 
 #: src/monitor/monitor.cpp:2744
 #, kde-format
@@ -32558,7 +32558,7 @@ msgid ""
 "frei0r and restart Kdenlive"
 msgstr ""
 "A transição 'cairoblend' é necessária para este recurso; instale o 'frei0r' "
-"e reinicie o Kdenlive"
+"e reinicie o MEditor"
 
 #: src/monitor/monitor.cpp:2868
 #, kde-format
@@ -32828,7 +32828,7 @@ msgid ""
 "please fix it."
 msgstr ""
 "Não foi possível criar janela de prévia de vídeo.\n"
-"Alguma coisa está errada com a sua instalação do Kdenlive ou com a "
+"Alguma coisa está errada com a sua instalação do MEditor ou com a "
 "configuração do driver de vídeo. Tente corrigir isto."
 
 #: src/monitor/view/AudioView.qml:341
@@ -33715,7 +33715,7 @@ msgid ""
 " is not an archived Kdenlive project"
 msgstr ""
 "O arquivo %1\n"
-" não é um projeto arquivado do Kdenlive"
+" não é um projeto arquivado do MEditor"
 
 #: src/project/dialogs/archivewidget.cpp:390
 #, kde-format
@@ -34654,7 +34654,7 @@ msgstr "Não é possível executar atribuição"
 #: src/project/projectmanager.cpp:73
 #, kde-format
 msgid "Kdenlive Project"
-msgstr "Projeto Kdenlive"
+msgstr "Projeto MEditor"
 
 #: src/project/projectmanager.cpp:75
 #, kde-format
@@ -34923,7 +34923,7 @@ msgid ""
 "The project <b>\"%1\"</b> seems to be already opened in another Kdenlive "
 "session.%2<br><br>Opening it in two sessions can cause data loss."
 msgstr ""
-"O projeto <b>\"%1\"</b> parece já estar aberto em outra sessão do Kdenlive."
+"O projeto <b>\"%1\"</b> parece já estar aberto em outra sessão do MEditor."
 "%2<br><br>Abri-lo em duas sessões pode causar perda de dados."
 
 #: src/project/projectmanager.cpp:2678
@@ -35041,7 +35041,7 @@ msgid ""
 "Cannot find python3 in the kdenlive venv.\n"
 "Try to uninstall and then reinstall the plugin."
 msgstr ""
-"Não é possível encontrar o python3 no venv do Kdenlive.\n"
+"Não é possível encontrar o python3 no venv do MEditor.\n"
 "Tente desinstalar e reinstalar a extensão."
 
 #: src/pythoninterfaces/abstractpythoninterface.cpp:370
@@ -35050,7 +35050,7 @@ msgid ""
 "Cannot find pip3 in the kdenlive venv.\n"
 "Try to uninstall and then reinstall the plugin."
 msgstr ""
-"Não é possível encontrar o pip3 no venv do Kdenlive.\n"
+"Não é possível encontrar o pip3 no venv do MEditor.\n"
 "Tente desinstalar e reinstalar a extensão."
 
 #: src/pythoninterfaces/abstractpythoninterface.cpp:461
@@ -38216,7 +38216,7 @@ msgstr "Carregar Título"
 #: src/titler/titlewidget.cpp:2559
 #, kde-format
 msgid "Kdenlive title"
-msgstr "Título do Kdenlive"
+msgstr "Título do MEditor"
 
 #: src/titler/titlewidget.cpp:2605
 #, kde-format
@@ -39527,7 +39527,7 @@ msgid ""
 "Kdenlive will check this limit every 2 weeks. Set to zero to disable "
 "checking."
 msgstr ""
-"O Kdenlive verificará esse limite a cada 2 semanas. Defina como zero para "
+"O MEditor verificará esse limite a cada 2 semanas. Defina como zero para "
 "desativar a verificação."
 
 #. i18n: ectx: property (suffix), widget (QSpinBox, kcfg_maxcachesize)
@@ -40191,7 +40191,7 @@ msgid ""
 "Warning: changes to the drivers and devices can make Kdenlive unstable. "
 "Change only if you know what you do."
 msgstr ""
-"Aviso: mudanças nos drivers e dispositivos podem tornar o Kdenlive instável. "
+"Aviso: mudanças nos drivers e dispositivos podem tornar o MEditor instável. "
 "Mude apenas se você souber o que está fazendo."
 
 #. i18n: ectx: property (text), widget (QLabel, label_gpu)
@@ -40204,7 +40204,7 @@ msgstr "Processamento de GPU (biblioteca Movit):"
 #: src/ui/configsdl_ui.ui:72
 #, kde-format
 msgid "Enable - restart Kdenlive to apply"
-msgstr "Habilitar - reinicie o Kdenlive para aplicar"
+msgstr "Habilitar - reinicie o MEditor para aplicar"
 
 #. i18n: ectx: property (text), widget (QLabel, label_audio_backend)
 #: src/ui/configsdl_ui.ui:86
@@ -40380,7 +40380,7 @@ msgid ""
 "your system. For advanced users only, as you will have to properly setup "
 "everything by yourself."
 msgstr ""
-"Quando ativado, o Kdenlive usará os pacotes de conversão de voz para texto "
+"Quando ativado, o MEditor usará os pacotes de conversão de voz para texto "
 "instalados no seu sistema. Somente para usuários avançados, pois você terá "
 "que configurar tudo corretamente por conta própria."
 
@@ -40442,7 +40442,7 @@ msgid ""
 "For advanced users only, as you will have to properly setup everything by "
 "yourself."
 msgstr ""
-"Quando ativado, o Kdenlive usará a versão SAM2 instalada no seu sistema. "
+"Quando ativado, o MEditor usará a versão SAM2 instalada no seu sistema. "
 "Apenas para usuários avançados, pois você terá que configurar tudo "
 "corretamente por conta própria."
 
@@ -41233,7 +41233,7 @@ msgstr "Tipo de marcação"
 #: src/ui/exportguidesdialog_ui.ui:189
 #, kde-format
 msgid "Kdenlive JSON"
-msgstr "JSON do Kdenlive"
+msgstr "JSON do MEditor"
 
 #. i18n: ectx: property (text), widget (QLabel, label_5)
 #: src/ui/exportguidesdialog_ui.ui:209
@@ -43480,7 +43480,7 @@ msgstr "%1h"
 #~ msgstr "Funcionalidade principal do OpenTimelineIO"
 
 #~ msgid "OpenTimelineIO Kdenlive support"
-#~ msgstr "Suporte do Kdenlive ao OpenTimelineIO"
+#~ msgstr "Suporte do MEditor ao OpenTimelineIO"
 
 #~ msgid ""
 #~ "Could not find \"otioconvert\" script although it is installed through "
@@ -43494,7 +43494,7 @@ msgstr "%1h"
 #~ "na sua variável do ambiente PATH"
 
 #~ msgid "The Kdenlive adapter was not found by OpenTimelineIO."
-#~ msgstr "O adaptador do Kdenlive não foi encontrado pelo OpenTimelineIO."
+#~ msgstr "O adaptador do MEditor não foi encontrado pelo OpenTimelineIO."
 
 #~ msgid "Configure your OpenTimelineIO setup"
 #~ msgstr "Configure seu setup do OpenTimelineIO"
@@ -43531,7 +43531,7 @@ msgstr "%1h"
 #~ msgstr "Importar projeto"
 
 #~ msgid "Kdenlive project (*.kdenlive)"
-#~ msgstr "Projeto do Kdenlive (*.kdenlive)"
+#~ msgstr "Projeto do MEditor (*.kdenlive)"
 
 #~ msgid ""
 #~ "The current project has not been saved\n"
@@ -44056,7 +44056,7 @@ msgstr "%1h"
 #~ "  "
 #~ msgstr ""
 #~ "\n"
-#~ "    <p>Kdenlive is a video editing application with support for many "
+#~ "    <p>MEditor is a video editing application with support for many "
 #~ "audio and video formats. It offers advanced editing features, a variety "
 #~ "of effects and transitions, color correction, audio post-production and "
 #~ "subtitling tools. Additionally, it provides the flexibility to render "
@@ -44066,154 +44066,154 @@ msgstr "%1h"
 #~ "التأثيرات والانتقالات، وتصحيح الألوان، وأدوات ما بعد الإنتاج الصوتي "
 #~ "وترجمة الأفلام.بالإضافة إلى ذلك، فهو يوفر المرونة اللازمة للتصيير  إلى أي "
 #~ "تنسيق من اختيارك.</p>\n"
-#~ "    <p xml:lang=\"ca\">El Kdenlive és una aplicació d'edició de vídeo amb "
+#~ "    <p xml:lang=\"ca\">El MEditor és una aplicació d'edició de vídeo amb "
 #~ "suport per a molts formats d'àudio i vídeo. Ofereix funcions avançades "
 #~ "d'edició, una gran varietat d'efectes i transicions, correcció de color, "
 #~ "postproducció d'àudio i eines de subtitulació. A més, proporciona la "
 #~ "flexibilitat per a convertir pràcticament a qualsevol format de la vostra "
 #~ "elecció.</p>\n"
-#~ "    <p xml:lang=\"ca-valencia\">Kdenlive és una aplicació d'edició de "
+#~ "    <p xml:lang=\"ca-valencia\">MEditor és una aplicació d'edició de "
 #~ "vídeo amb suport per a molts formats d'àudio i vídeo. Oferix "
 #~ "característiques avançades d'edició, una gran varietat d'efectes i "
 #~ "transicions, correcció de color, postproducció d'àudio i eines de "
 #~ "subtitulació. A més, proporciona la flexibilitat per a convertir "
 #~ "pràcticament a qualsevol format de la vostra elecció.</p>\n"
-#~ "    <p xml:lang=\"de\">Kdenlive ist ein Videobearbeitungsprogramm, das "
+#~ "    <p xml:lang=\"de\">MEditor ist ein Videobearbeitungsprogramm, das "
 #~ "viele Audio- und Videoformate unterstützt. Es bietet erweiterte "
 #~ "Bearbeitungsfunktionen, eine Vielzahl von Effekten und Übergängen, "
 #~ "Farbkorrektur, Audio-Nachbearbeitung und Untertitelungswerkzeuge. Darüber "
 #~ "hinaus bietet es die Flexibilität, ein Video in praktisch jedes Format "
 #~ "Ihrer Wahl zu rendern.</p>\n"
-#~ "    <p xml:lang=\"en-GB\">Kdenlive is a video editing application with "
+#~ "    <p xml:lang=\"en-GB\">MEditor is a video editing application with "
 #~ "support for many audio and video formats. It offers advanced editing "
 #~ "features, a variety of effects and transitions, colour correction, audio "
 #~ "post-production and subtitling tools. Additionally, it provides the "
 #~ "flexibility to render into practically any format of your choice.</p>\n"
-#~ "    <p xml:lang=\"eo\">Kdenlive estas videoredakta aplikaĵo kun subteno "
+#~ "    <p xml:lang=\"eo\">MEditor estas videoredakta aplikaĵo kun subteno "
 #~ "por multaj audaĵaj kaj vidaĵaj formatoj. Ĝi ofertas altnivelajn redaktajn "
 #~ "funkciojn, diversajn efektojn kaj transirojn, kolorkorektado, aŭda "
 #~ "postproduktado kaj subtitolaj iloj. Aldone, ĝi provizas la flekseblecon "
 #~ "por redoni en preskaŭ ajna formato de via elekto.</p>\n"
-#~ "    <p xml:lang=\"es\">Kdenlive es una aplicación de edición de video con "
+#~ "    <p xml:lang=\"es\">MEditor es una aplicación de edición de video con "
 #~ "soporte para una variedad de formatos de audio y video. Ofrece "
 #~ "características avanzadas de edición, múltiples efectos y transiciones, "
 #~ "corrección de color, posproducción de audio y herramientas de "
 #~ "subtitulado. Adicionalmente, permite la exportación a prácticamente "
 #~ "cualquier formato de audio y video existente.</p>\n"
-#~ "    <p xml:lang=\"eu\">Kdenlive, audio- eta bideo-formatu askorako "
+#~ "    <p xml:lang=\"eu\">MEditor, audio- eta bideo-formatu askorako "
 #~ "euskarria duen bideoa editatzeko tresna bat da. Edizio-funtzio "
 #~ "aurreratuak eskaintzen ditu, efektu eta trantsizio ezberdinak, kolore-"
 #~ "zuzenketa, audio post-produkzioa eta azpidatzietarako tresnak. Gainera, "
 #~ "aukeratzen duzun ia edozein formatutan errendatzeko malgutasuna ematen du."
 #~ "</p>\n"
-#~ "    <p xml:lang=\"fi\">Kdenlive on videomuokkaussovellus, joka tukee "
+#~ "    <p xml:lang=\"fi\">MEditor on videomuokkaussovellus, joka tukee "
 #~ "monia ääni- ja videomuotoja. Se työkalut tarjoavat edistyneet "
 #~ "muokkausominaisuudet, joukon tehosteita ja siirtymiä, värinkorjauksen, "
 #~ "äänen jälkituotannon sekä tekstityksen. Lisäksi se tarjoaa joustoa "
 #~ "hahmontaa tuloksen lähes mihin tahansa haluamaasi muotoon.</p>\n"
-#~ "    <p xml:lang=\"fr\">Kdenlive est une application de montage vidéo "
+#~ "    <p xml:lang=\"fr\">MEditor est une application de montage vidéo "
 #~ "prenant en charge de nombreux formats audio et vidéo. Il offre des "
 #~ "fonctionnalités d'édition avancées, une variété d'effets et de "
 #~ "transitions, une correction des couleurs, une post-production audio et "
 #~ "des outils de sous-titrage. En outre, il offre la flexibilité de faire un "
 #~ "rendu dans pratiquement n'importe quel format de votre choix.</p>\n"
-#~ "    <p xml:lang=\"ga\">Is feidhmchlár eagarthóireachta físe é Kdenlive a "
+#~ "    <p xml:lang=\"ga\">Is feidhmchlár eagarthóireachta físe é MEditor a "
 #~ "thacaíonn le go leor formáidí fuaime agus físe. Cuireann sé gnéithe "
 #~ "eagarthóireachta chun cinn, réimse éifeachtaí agus aistrithe, ceartú "
 #~ "datha, iarléiriú fuaime agus uirlisí fotheidealaithe ar fáil. Ina "
 #~ "theannta sin, cuireann sé an tsolúbthacht ar fáil chun rindreáil i "
 #~ "mbeagnach aon fhormáid is rogha leat.</p>\n"
-#~ "    <p xml:lang=\"gl\">Kdenlive é unha aplicación de edición de vídeo "
+#~ "    <p xml:lang=\"gl\">MEditor é unha aplicación de edición de vídeo "
 #~ "para moitos formatos de son e de vídeo. Fornece funcionalidades avanzadas "
 #~ "de edición, varios efectos e transicións, corrección de cor, post-"
 #~ "produción de son e ferramentas de subtítulos. Ademais, fornece a "
 #~ "flexibilidade de renderizar en calquera formato da súa escolla.</p>\n"
-#~ "    <p xml:lang=\"he\">Kdenlive הוא יישום לעריכת וידאו עם תמיכה במגוון "
+#~ "    <p xml:lang=\"he\">MEditor הוא יישום לעריכת וידאו עם תמיכה במגוון "
 #~ "סוגים של וידאו ושמע. הוא מציע יכולות עריכה מתקדמות, שלל אפקטים ומעברונים, "
 #~ "תיקון צבע, הפקת פוסט של שמע וכלי כתוביות. בנוסף, הוא מספק את הגמישות לעבד "
 #~ "לכמעט כל סוג אפשרי שיש לבחירתך.</p>\n"
-#~ "    <p xml:lang=\"hi\">Kdenlive एक वीडियो संपादन एप्लिकेशन है जो कई ऑडियो और "
+#~ "    <p xml:lang=\"hi\">MEditor एक वीडियो संपादन एप्लिकेशन है जो कई ऑडियो और "
 #~ "वीडियो प्रारूपों के लिए समर्थन प्रदान करता है। यह उन्नत संपादन सुविधाएँ, विभिन्न "
 #~ "प्रकार के प्रभाव और संक्रमण, रंग सुधार, ऑडियो पोस्ट-प्रोडक्शन और उपशीर्षक उपकरण "
 #~ "प्रदान करता है। इसके अतिरिक्त, यह आपकी पसंद के व्यावहारिक रूप से किसी भी प्रारूप में "
 #~ "रेंडर करने की सुविधा प्रदान करता है।</p>\n"
-#~ "    <p xml:lang=\"id\">Kdenlive adalah aplikasi pengeditan video yang "
+#~ "    <p xml:lang=\"id\">MEditor adalah aplikasi pengeditan video yang "
 #~ "mendukung banyak format audio dan video. Aplikasi ini menawarkan fitur "
 #~ "pengeditan tingkat lanjut, berbagai efek dan transisi, koreksi warna, "
 #~ "pascaproduksi audio, dan alat subtitel. Selain itu, aplikasi ini "
 #~ "menyediakan fleksibilitas untuk melakukan render ke hampir semua format "
 #~ "pilihan Anda.</p>\n"
-#~ "    <p xml:lang=\"it\">Kdenlive è un'applicazione di editing video che "
+#~ "    <p xml:lang=\"it\">MEditor è un'applicazione di editing video che "
 #~ "supporta molti formati audio e video. Offre funzionalità avanzate di "
 #~ "modifica, un assortimento di effetti e transizioni, correzione del "
 #~ "colore, strumenti per la post-produzione audio e la sottotitolazione. In "
 #~ "aggiunta, fornisce la flessibilità di produrre praticamente in qualsiasi "
 #~ "formato tu desideri.</p>\n"
-#~ "    <p xml:lang=\"ka\">Kdenlive ვიდეორედაქტორია ბევრი აუდიო და "
+#~ "    <p xml:lang=\"ka\">MEditor ვიდეორედაქტორია ბევრი აუდიო და "
 #~ "ვიდეოფორმატების მხარდაჭერით. ის გთავაზობთ დამატებითი ჩასწორების "
 #~ "ფუნქციებს, მრავალ ეფექტსა და გადასვლას, ფერის შესწორებას, აუდიოს პოსტ-"
 #~ "პროდაქშენს და სუბტიტრების მორგებას. დამატებით, ის გაძლევთ საშუალებას, "
 #~ "დაარენდეროთ პრაქტიკულად ნებისმიერ ფორმატში, რომელსაც აირჩევთ.</p>\n"
-#~ "    <p xml:lang=\"lv\">„Kdenlive“ ir video rediģēšanas programma ar "
+#~ "    <p xml:lang=\"lv\">„MEditor“ ir video rediģēšanas programma ar "
 #~ "daudzu audio un video formātu atbalstu. Tā sniedz plašas rediģēšanas "
 #~ "iespējas, dažādus efektus un pārejas, krāsu korekcijas iespējas, skaņas "
-#~ "pēcapstrādes un subtitru rīkus. Turklāt „Kdenlive“ ļauj renderēt "
+#~ "pēcapstrādes un subtitru rīkus. Turklāt „MEditor“ ļauj renderēt "
 #~ "praktiski jebkurā formātā pēc jūsu izvēles.</p>\n"
-#~ "    <p xml:lang=\"nl\">Kdenlive is een toepassing voor video bewerken met "
+#~ "    <p xml:lang=\"nl\">MEditor is een toepassing voor video bewerken met "
 #~ "ondersteuning voor vele audio- en videoformaten. Het biedt geavanceerde "
 #~ "bewerkingsfuncties, een verscheidenheid aan effecten en transities, "
 #~ "kleurcorrectie, audio nabewerking en hulpmiddelen voor ondertiteling. "
 #~ "Bovendien levert het de flexibiliteit om te renderen in praktisch elk "
 #~ "formaat van uw keuze.</p>\n"
-#~ "    <p xml:lang=\"pl\">Kdenlive jest aplikacją do edytowania wideo z "
+#~ "    <p xml:lang=\"pl\">MEditor jest aplikacją do edytowania wideo z "
 #~ "obsługą wielu formatów dźwięku i obrazu. Daje rozbudowane możliwości, "
 #~ "wiele efektów i przejść, poprawianie barw, po-produkcję dźwięki oraz "
 #~ "narzędzia do napisów. Dodatkowo, zapewnia możliwość zapisania do "
 #~ "właściwie dowolnego formatu jaki sobie wybierzesz.</p>\n"
-#~ "    <p xml:lang=\"pt-BR\">Kdenlive é um aplicativo de edição de vídeo com "
+#~ "    <p xml:lang=\"pt-BR\">MEditor é um aplicativo de edição de vídeo com "
 #~ "suporte para vários formatos de áudio e vídeo. Ele oferece recursos "
 #~ "avançados de edição, uma variedade de efeitos e transições, correção de "
 #~ "cores, pós-produção de áudio e ferramentas de legenda. Além disso, "
 #~ "fornece a flexibilidade para renderizar em praticamente qualquer formato "
 #~ "que você escolher.</p>\n"
-#~ "    <p xml:lang=\"ru\">Kdenlive — видеоредактор, поддерживающий различные "
+#~ "    <p xml:lang=\"ru\">MEditor — видеоредактор, поддерживающий различные "
 #~ "форматы аудио- и видеозаписей. Программа предоставляет расширенные "
 #~ "возможности редактирования, широкий ряд эффектов и переходов, инструменты "
 #~ "цветокоррекции, окончательного монтажа аудио и наложения субтитров. Кроме "
 #~ "того, гибкость настройки программы позволяет получить на выходе файл "
 #~ "практически любого формата.</p>\n"
-#~ "    <p xml:lang=\"sa\">Kdenlive इति एकः विडियो सम्पादन-अनुप्रयोगः अस्ति यस्य "
+#~ "    <p xml:lang=\"sa\">MEditor इति एकः विडियो सम्पादन-अनुप्रयोगः अस्ति यस्य "
 #~ "समर्थनं बहुषु श्रव्य-वीडियो-स्वरूपेषु भवति । अस्मिन् उन्नतसम्पादनविशेषताः, विविधाः "
 #~ "प्रभावाः संक्रमणाः च, वर्णशुद्धिः, श्रव्य-उत्तरनिर्माणं, उपशीर्षकसाधनं च प्राप्यते । "
 #~ "तदतिरिक्तं, भवतः पसन्दस्य व्यावहारिकरूपेण कस्मिन् अपि प्रारूपे प्रतिपादयितुं लचीलापनं "
 #~ "प्रदाति ।</p>\n"
-#~ "    <p xml:lang=\"sl\">Kdenlive je program za montažo videoposnetkov s "
+#~ "    <p xml:lang=\"sl\">MEditor je program za montažo videoposnetkov s "
 #~ "podporo za številne zvokovne in video zapise. Ponuja napredne funkcije "
 #~ "montaže, urejanja, različne učinke in prehode, korekcijo barv, "
 #~ "poprodukcijo zvoka in orodja za podnaslavljanje. Poleg tega zagotavlja "
 #~ "prilagodljivost za izrisovanje v praktično poljuben zapis po vašem izboru."
 #~ "</p>\n"
-#~ "    <p xml:lang=\"sv\">Kdenlive är ett videoredigeringsprogram med stöd "
+#~ "    <p xml:lang=\"sv\">MEditor är ett videoredigeringsprogram med stöd "
 #~ "för många ljud- och videoformat. Det erbjuder avancerade "
 #~ "redigeringsfunktioner, en mängd olika effekter och övergångar, "
 #~ "färgkorrigering, efterproduktion av ljud och textningsverktyg. Dessutom "
 #~ "ger det flexibiliteten att återge till praktiskt taget vilket format som "
 #~ "helst.</p>\n"
-#~ "    <p xml:lang=\"tr\">Kdenlive, birçok ses ve video biçimini destekleyen "
+#~ "    <p xml:lang=\"tr\">MEditor, birçok ses ve video biçimini destekleyen "
 #~ "bir video düzenleme uygulamasıdır. Gelişmiş düzenleme özellikleri, "
 #~ "çeşitli efektler ve geçişler, renk düzeltme, ses post prodüksiyon ve "
 #~ "altyazı araçları sunar. Ek olarak, neredeyse seçtiğiniz herhangi bir "
 #~ "biçime dönüştürme esnekliği de sağlar.</p>\n"
-#~ "    <p xml:lang=\"uk\">Kdenlive — програма для редагування відео із "
+#~ "    <p xml:lang=\"uk\">MEditor — програма для редагування відео із "
 #~ "підтримкою багатьох форматів даних відео та звуку. У ній реалізовано "
 #~ "широкі можливості з редагування, спектр ефектів та переходів, виправлення "
 #~ "кольорів, остаточну обробку звуку та засоби субтитрування. Крім того, "
 #~ "програма здатна гнучко обробляти дані практично до будь-якого вибраного "
 #~ "вами формату.</p>\n"
-#~ "    <p xml:lang=\"zh-CN\">Kdenlive 是一款视频编辑应用程序，支持多种音视频"
+#~ "    <p xml:lang=\"zh-CN\">MEditor 是一款视频编辑应用程序，支持多种音视频"
 #~ "格式。它提供了各种高级编辑功能、种类丰富的效果和转场、色彩校正、音频后处理"
 #~ "和字幕工具。它还能灵活地将视频输出为您需要的任意格式。</p>\n"
-#~ "    <p xml:lang=\"zh-TW\">Kdenlive 是支援許多音訊與影片格式的影片編輯軟"
+#~ "    <p xml:lang=\"zh-TW\">MEditor 是支援許多音訊與影片格式的影片編輯軟"
 #~ "體。它提供進階的剪輯功能、許多的效果、轉場特效、顏色校正、音效後製與字幕工"
 #~ "具等等。它也支援輸出到基本上任何您所想要使用的格式。</p>\n"
 #~ "    <p>Features:</p>\n"
@@ -44553,344 +44553,344 @@ msgstr "%1h"
 
 #~| msgid "Kdenlive project (*.kdenlive)"
 #~ msgid "Kdenlive video project document"
-#~ msgstr "Kdenlive video project document"
+#~ msgstr "MEditor video project document"
 
 #~ msgid "مستند مشروع «كدنلايف» فيديو"
 #~ msgstr "مستند مشروع «كدنلايف» فيديو"
 
 #~ msgid "Kdenlive video layihəsi sənədi"
-#~ msgstr "Kdenlive video layihəsi sənədi"
+#~ msgstr "MEditor video layihəsi sənədi"
 
 #~ msgid "Document de projecte de vídeo del Kdenlive"
-#~ msgstr "Document de projecte de vídeo del Kdenlive"
+#~ msgstr "Document de projecte de vídeo del MEditor"
 
 #~ msgid "Document de projecte de vídeo de Kdenlive"
-#~ msgstr "Document de projecte de vídeo de Kdenlive"
+#~ msgstr "Document de projecte de vídeo de MEditor"
 
 #~| msgid "Kdenlive project (*.kdenlive)"
 #~ msgid "Dokument video projektu Kdenlive"
-#~ msgstr "Dokument video projektu Kdenlive"
+#~ msgstr "Dokument video projektu MEditor"
 
 #~ msgid "Kdenlive-Videoprojektdokument"
-#~ msgstr "Kdenlive-Videoprojektdokument"
+#~ msgstr "MEditor-Videoprojektdokument"
 
 #~ msgid "Έγγραφο έργου βίντεο kdenlive"
 #~ msgstr "Έγγραφο έργου βίντεο kdenlive"
 
 #~| msgid "Kdenlive project (*.kdenlive)"
 #~ msgid "Kdenlive videoprojekta dokumento"
-#~ msgstr "Kdenlive videoprojekta dokumento"
+#~ msgstr "MEditor videoprojekta dokumento"
 
 #~| msgctxt "@title:window"
 #~| msgid "Welcome to Kdenlive"
 #~ msgid "Proyecto de video de Kdenlive"
-#~ msgstr "Proyecto de video de Kdenlive"
+#~ msgstr "Proyecto de video de MEditor"
 
 #~ msgid "Kdenlive-ko bideo-proiektuaren dokumentua"
-#~ msgstr "Kdenlive-ko bideo-proiektuaren dokumentua"
+#~ msgstr "MEditor-ko bideo-proiektuaren dokumentua"
 
 #~ msgid "Kdenlive-videoprojektitiedosto"
-#~ msgstr "Kdenlive-videoprojektitiedosto"
+#~ msgstr "MEditor-videoprojektitiedosto"
 
 #~ msgid "Document de projet vidéo pour Kdenlive"
-#~ msgstr "Document de projet vidéo pour Kdenlive"
+#~ msgstr "Document de projet vidéo pour MEditor"
 
 #~ msgid "Doiciméad tionscadail físe Kdenlive"
-#~ msgstr "Doiciméad tionscadail físe Kdenlive"
+#~ msgstr "Doiciméad tionscadail físe MEditor"
 
 #~ msgid "Documento dun proxecto de vídeo de Kdenlive."
-#~ msgstr "Documento dun proxecto de vídeo de Kdenlive."
+#~ msgstr "Documento dun proxecto de vídeo de MEditor."
 
 #~ msgid "מסמך מיזם וידאו של Kdenlive"
-#~ msgstr "מסמך מיזם וידאו של Kdenlive"
+#~ msgstr "מסמך מיזם וידאו של MEditor"
 
 #~ msgid "Kdenlive वीडियो परियोजना दस्तावेज़"
-#~ msgstr "Kdenlive वीडियो परियोजना दस्तावेज़"
+#~ msgstr "MEditor वीडियो परियोजना दस्तावेज़"
 
 #~ msgid "Kdenlive videóprojekt-dokumentum"
-#~ msgstr "Kdenlive videóprojekt-dokumentum"
+#~ msgstr "MEditor videóprojekt-dokumentum"
 
 #~ msgid "Dokumen proyek video Kdenlive"
-#~ msgstr "Dokumen proyek video Kdenlive"
+#~ msgstr "Dokumen proyek video MEditor"
 
 #~ msgid "Progetto video di Kdenlive"
-#~ msgstr "Progetto video di Kdenlive"
+#~ msgstr "Progetto video di MEditor"
 
 #~ msgid "Kdenlive ビデオプロジェクト資料"
-#~ msgstr "Kdenlive ビデオプロジェクト資料"
+#~ msgstr "MEditor ビデオプロジェクト資料"
 
 #~ msgid "Kdenlive ვიდეო პროექტის დოკუმენტი"
-#~ msgstr "Kdenlive ვიდეო პროექტის დოკუმენტი"
+#~ msgstr "MEditor ვიდეო პროექტის დოკუმენტი"
 
 #~ msgid "Kdenlive 동영상 프로젝트 문서"
-#~ msgstr "Kdenlive 동영상 프로젝트 문서"
+#~ msgstr "MEditor 동영상 프로젝트 문서"
 
 #~| msgid "Kdenlive project (*.kdenlive)"
 #~ msgid "Kdenlive video projekto dokumentas"
-#~ msgstr "Kdenlive video projekto dokumentas"
+#~ msgstr "MEditor video projekto dokumentas"
 
 #~ msgid "„Kdenlive“ video projekta dokuments"
-#~ msgstr "„Kdenlive“ video projekta dokuments"
+#~ msgstr "„MEditor“ video projekta dokuments"
 
 #~ msgid "Video projectdocument van Kdenlive"
-#~ msgstr "Video projectdocument van Kdenlive"
+#~ msgstr "Video projectdocument van MEditor"
 
 #~ msgid "Kdenlive-videoprosjektdokument"
-#~ msgstr "Kdenlive-videoprosjektdokument"
+#~ msgstr "MEditor-videoprosjektdokument"
 
 #~ msgid "Dokument projektowy filmu Kdenlive"
-#~ msgstr "Dokument projektowy filmu Kdenlive"
+#~ msgstr "Dokument projektowy filmu MEditor"
 
 #~ msgid "Documento de projecto de vídeo do Kdenlive"
-#~ msgstr "Documento de projecto de vídeo do Kdenlive"
+#~ msgstr "Documento de projecto de vídeo do MEditor"
 
 #~ msgid "Documento de projeto de vídeo do Kdenlive"
-#~ msgstr "Documento de projeto de vídeo do Kdenlive"
+#~ msgstr "Documento de projeto de vídeo do MEditor"
 
 #~ msgid "Видеопроект Kdenlive"
-#~ msgstr "Видеопроект Kdenlive"
+#~ msgstr "Видеопроект MEditor"
 
 #~ msgid "Kdenlive विडियो परियोजना दस्तावेज"
-#~ msgstr "Kdenlive विडियो परियोजना दस्तावेज"
+#~ msgstr "MEditor विडियो परियोजना दस्तावेज"
 
 #~| msgid "Kdenlive project (*.kdenlive)"
 #~ msgid "Dokument video projekta Kdenlive"
-#~ msgstr "Dokument video projekta Kdenlive"
+#~ msgstr "Dokument video projekta MEditor"
 
 #~ msgid "Kdenlive-videoprojektdokument"
-#~ msgstr "Kdenlive-videoprojektdokument"
+#~ msgstr "MEditor-videoprojektdokument"
 
 #~| msgid "Kdenlive project (*.kdenlive)"
 #~ msgid "Kdenlive video proje belgesi"
-#~ msgstr "Kdenlive video proje belgesi"
+#~ msgstr "MEditor video proje belgesi"
 
 #~ msgid "документ відеопроєкту Kdenlive"
-#~ msgstr "документ відеопроєкту Kdenlive"
+#~ msgstr "документ відеопроєкту MEditor"
 
 #~ msgid "Kdenlive 视频工程文件"
-#~ msgstr "Kdenlive 视频工程文件"
+#~ msgstr "MEditor 视频工程文件"
 
 #~ msgid "Kdenlive 影片專案文件"
-#~ msgstr "Kdenlive 影片專案文件"
+#~ msgstr "MEditor 影片專案文件"
 
 #~| msgid "Kdenlive title"
 #~ msgid "Kdenlive video title"
-#~ msgstr "Kdenlive video title"
+#~ msgstr "MEditor video title"
 
 #~ msgid "عنوان فيديو «كدنلايف»"
 #~ msgstr "عنوان فيديو «كدنلايف»"
 
 #~ msgid "Kdenlive video başlığı"
-#~ msgstr "Kdenlive video başlığı"
+#~ msgstr "MEditor video başlığı"
 
 #~ msgid "Títol de vídeo del Kdenlive"
-#~ msgstr "Títol de vídeo del Kdenlive"
+#~ msgstr "Títol de vídeo del MEditor"
 
 #~ msgid "Títol de vídeo de Kdenlive"
-#~ msgstr "Títol de vídeo de Kdenlive"
+#~ msgstr "Títol de vídeo de MEditor"
 
 #~ msgid "Název videa Kdenlive"
-#~ msgstr "Název videa Kdenlive"
+#~ msgstr "Název videa MEditor"
 
 #~| msgid "Kdenlive title"
 #~ msgid "Kdenlive-Videotitel"
-#~ msgstr "Kdenlive-Videotitel"
+#~ msgstr "MEditor-Videotitel"
 
 #~ msgid "Τίτλος βίντεο kdenlive"
 #~ msgstr "Τίτλος βίντεο kdenlive"
 
 #~| msgid "Kdenlive title"
 #~ msgid "Kdenlive videotitolo"
-#~ msgstr "Kdenlive videotitolo"
+#~ msgstr "MEditor videotitolo"
 
 #~ msgid "Título de video de Kdenlive"
-#~ msgstr "Título de video de Kdenlive"
+#~ msgstr "Título de video de MEditor"
 
 #~ msgid "Kdenlive-ko bideo-izenburua"
-#~ msgstr "Kdenlive-ko bideo-izenburua"
+#~ msgstr "MEditor-ko bideo-izenburua"
 
 #~ msgid "Kdenlive-video-otsikko"
-#~ msgstr "Kdenlive-video-otsikko"
+#~ msgstr "MEditor-video-otsikko"
 
 #~ msgid "Titre de vidéo pour Kdenlive"
-#~ msgstr "Titre de vidéo pour Kdenlive"
+#~ msgstr "Titre de vidéo pour MEditor"
 
 #~ msgid "Teideal físeáin Kdenlive"
-#~ msgstr "Teideal físeáin Kdenlive"
+#~ msgstr "Teideal físeáin MEditor"
 
 #~ msgid "Título de vídeo de Kdenlive."
-#~ msgstr "Título de vídeo de Kdenlive."
+#~ msgstr "Título de vídeo de MEditor."
 
 #~ msgid "כותרת וידאו של Kdenlive"
-#~ msgstr "כותרת וידאו של Kdenlive"
+#~ msgstr "כותרת וידאו של MEditor"
 
 #~ msgid "Kdenlive वीडियो शीर्षक"
-#~ msgstr "Kdenlive वीडियो शीर्षक"
+#~ msgstr "MEditor वीडियो शीर्षक"
 
 #~| msgid "Kdenlive title"
 #~ msgid "Kdenlive videófelirat"
-#~ msgstr "Kdenlive videófelirat"
+#~ msgstr "MEditor videófelirat"
 
 #~| msgctxt "@title:window"
 #~| msgid "Welcome to Kdenlive"
 #~ msgid "Judul video Kdenlive"
-#~ msgstr "Judul video Kdenlive"
+#~ msgstr "Judul video MEditor"
 
 #~| msgctxt "@title:window"
 #~| msgid "Welcome to Kdenlive"
 #~ msgid "Titolo video di Kdenlive"
-#~ msgstr "Titolo video di Kdenlive"
+#~ msgstr "Titolo video di MEditor"
 
 #~ msgid "Kdenlive ビデオタイトル"
-#~ msgstr "Kdenlive ビデオタイトル"
+#~ msgstr "MEditor ビデオタイトル"
 
 #~ msgid "Kdenlive ვიდეოს სათაური"
-#~ msgstr "Kdenlive ვიდეოს სათაური"
+#~ msgstr "MEditor ვიდეოს სათაური"
 
 #~ msgid "Kdenlive 동영상 타이틀"
-#~ msgstr "Kdenlive 동영상 타이틀"
+#~ msgstr "MEditor 동영상 타이틀"
 
 #~ msgid "„Kdenlive“ video nosaukums"
-#~ msgstr "„Kdenlive“ video nosaukums"
+#~ msgstr "„MEditor“ video nosaukums"
 
 #~ msgid "Titel van Kdenlive-video"
-#~ msgstr "Titel van Kdenlive-video"
+#~ msgstr "Titel van MEditor-video"
 
 #~| msgid "Kdenlive title"
 #~ msgid "Kdenlive-videotittel"
-#~ msgstr "Kdenlive-videotittel"
+#~ msgstr "MEditor-videotittel"
 
 #~ msgid "Tytuł filmu Kdenlive"
-#~ msgstr "Tytuł filmu Kdenlive"
+#~ msgstr "Tytuł filmu MEditor"
 
 #~ msgid "Título de vídeo do Kdenlive"
-#~ msgstr "Título de vídeo do Kdenlive"
+#~ msgstr "Título de vídeo do MEditor"
 
 #~ msgid "Видеотитры Kdenlive"
-#~ msgstr "Видеотитры Kdenlive"
+#~ msgstr "Видеотитры MEditor"
 
 #~ msgid "Kdenlive विडियो शीर्षक"
-#~ msgstr "Kdenlive विडियो शीर्षक"
+#~ msgstr "MEditor विडियो शीर्षक"
 
 #~ msgid "Naslov videa Kdenlive"
-#~ msgstr "Naslov videa Kdenlive"
+#~ msgstr "Naslov videa MEditor"
 
 #~| msgid "Kdenlive"
 #~ msgid "Kdenlive-video"
-#~ msgstr "Kdenlive-video"
+#~ msgstr "MEditor-video"
 
 #~ msgid "заголовок відео Kdenlive"
-#~ msgstr "заголовок відео Kdenlive"
+#~ msgstr "заголовок відео MEditor"
 
 #~ msgid "Kdenlive 视频标题"
-#~ msgstr "Kdenlive 视频标题"
+#~ msgstr "MEditor 视频标题"
 
 #~ msgid "Kdenlive 影片標題"
-#~ msgstr "Kdenlive 影片標題"
+#~ msgstr "MEditor 影片標題"
 
 #~ msgid "Kdenlive application layout"
-#~ msgstr "Kdenlive application layout"
+#~ msgstr "MEditor application layout"
 
 #~ msgid "تخطيط برنامج كدنلايف"
 #~ msgstr "تخطيط برنامج كدنلايف"
 
 #~| msgid "Kdenlive title"
 #~ msgid "Kdenlive tətbiq qatı"
-#~ msgstr "Kdenlive tətbiq qatı"
+#~ msgstr "MEditor tətbiq qatı"
 
 #~ msgid "Disposició de l'aplicació Kdenlive"
-#~ msgstr "Disposició de l'aplicació Kdenlive"
+#~ msgstr "Disposició de l'aplicació MEditor"
 
 #~ msgid "Rozvržení aplikace Kdenlive"
-#~ msgstr "Rozvržení aplikace Kdenlive"
+#~ msgstr "Rozvržení aplikace MEditor"
 
 #~ msgid "Kdenlive-Anwendungslayout"
-#~ msgstr "Kdenlive-Anwendungslayout"
+#~ msgstr "MEditor-Anwendungslayout"
 
 #~ msgid "Kdenlive aplikaĵa aranĝo"
-#~ msgstr "Kdenlive aplikaĵa aranĝo"
+#~ msgstr "MEditor aplikaĵa aranĝo"
 
 #~ msgid "Organización de paneles de Kdenlive"
-#~ msgstr "Organización de paneles de Kdenlive"
+#~ msgstr "Organización de paneles de MEditor"
 
 #~ msgid "Kdenlive aplikazioaren antolaera"
-#~ msgstr "Kdenlive aplikazioaren antolaera"
+#~ msgstr "MEditor aplikazioaren antolaera"
 
 #~ msgid "Kdenlive-sovelluksen-asettelu"
-#~ msgstr "Kdenlive-sovelluksen-asettelu"
+#~ msgstr "MEditor-sovelluksen-asettelu"
 
 #~ msgid "Mise en page de l'application Kdenlive"
-#~ msgstr "Mise en page de l'application Kdenlive"
+#~ msgstr "Mise en page de l'application MEditor"
 
 #~ msgid "Leagan amach feidhmchláir Kdenlive"
-#~ msgstr "Leagan amach feidhmchláir Kdenlive"
+#~ msgstr "Leagan amach feidhmchláir MEditor"
 
 #~ msgid "Disposición de aplicación de Kdenlive."
-#~ msgstr "Disposición de aplicación de Kdenlive."
+#~ msgstr "Disposición de aplicación de MEditor."
 
 #~ msgid "פריסת יישום Kdenlive"
-#~ msgstr "פריסת יישום Kdenlive"
+#~ msgstr "פריסת יישום MEditor"
 
 #~ msgid "Kdenlive अनुप्रयोग लेआउट"
-#~ msgstr "Kdenlive अनुप्रयोग लेआउट"
+#~ msgstr "MEditor अनुप्रयोग लेआउट"
 
 #~ msgid "Kdenlive alkalmazáselrendezés"
-#~ msgstr "Kdenlive alkalmazáselrendezés"
+#~ msgstr "MEditor alkalmazáselrendezés"
 
 #~ msgid "Tata letak aplikasi Kdenlive"
-#~ msgstr "Tata letak aplikasi Kdenlive"
+#~ msgstr "Tata letak aplikasi MEditor"
 
 #~ msgid "Disposizione dell'applicazione Kdenlive"
-#~ msgstr "Disposizione dell'applicazione Kdenlive"
+#~ msgstr "Disposizione dell'applicazione MEditor"
 
 #~ msgid "Kdenlive アプリケーションレイアウト"
-#~ msgstr "Kdenlive アプリケーションレイアウト"
+#~ msgstr "MEditor アプリケーションレイアウト"
 
 #~ msgid "Kdenlive აპლიკაციის განლაგება"
-#~ msgstr "Kdenlive აპლიკაციის განლაგება"
+#~ msgstr "MEditor აპლიკაციის განლაგება"
 
 #~ msgid "Kdenlive 앱 레이아웃"
-#~ msgstr "Kdenlive 앱 레이아웃"
+#~ msgstr "MEditor 앱 레이아웃"
 
 #~ msgid "„Kdenlive“ programmas izkārtojums"
-#~ msgstr "„Kdenlive“ programmas izkārtojums"
+#~ msgstr "„MEditor“ programmas izkārtojums"
 
 #~ msgid "Toepassingsindeling van Kdenlive"
-#~ msgstr "Toepassingsindeling van Kdenlive"
+#~ msgstr "Toepassingsindeling van MEditor"
 
 #~ msgid "Układ programu Kdenlive"
-#~ msgstr "Układ programu Kdenlive"
+#~ msgstr "Układ programu MEditor"
 
 #~ msgid "Disposição da aplicação Kdenlive"
-#~ msgstr "Disposição da aplicação Kdenlive"
+#~ msgstr "Disposição da aplicação MEditor"
 
 #~ msgid "Layout de aplicativo do Kdenlive"
-#~ msgstr "Layout de aplicativo do Kdenlive"
+#~ msgstr "Layout de aplicativo do MEditor"
 
 #~ msgid "Макет приложения Kdenlive"
-#~ msgstr "Макет приложения Kdenlive"
+#~ msgstr "Макет приложения MEditor"
 
 #~ msgid "Kdenlive अनुप्रयोग विन्यास"
-#~ msgstr "Kdenlive अनुप्रयोग विन्यास"
+#~ msgstr "MEditor अनुप्रयोग विन्यास"
 
 #~ msgid "Postavitev programa Kdenlive"
-#~ msgstr "Postavitev programa Kdenlive"
+#~ msgstr "Postavitev programa MEditor"
 
 #~| msgid "Kdenlive Project"
 #~ msgid "Kdenlive programlayout"
-#~ msgstr "Kdenlive programlayout"
+#~ msgstr "MEditor programlayout"
 
 #~ msgid "Kdenlive uygulama yerleşimi"
-#~ msgstr "Kdenlive uygulama yerleşimi"
+#~ msgstr "MEditor uygulama yerleşimi"
 
 #~ msgid "Компонування вікон програми Kdenlive"
-#~ msgstr "Компонування вікон програми Kdenlive"
+#~ msgstr "Компонування вікон програми MEditor"
 
 #~ msgid "Kdenlive 应用程序布局"
-#~ msgstr "Kdenlive 应用程序布局"
+#~ msgstr "MEditor 应用程序布局"
 
 #~ msgid "Kdenlive 應用程式版面配置"
-#~ msgstr "Kdenlive 應用程式版面配置"
+#~ msgstr "MEditor 應用程式版面配置"
 
 #~| msgid "MLT video backend!"
 #~ msgid "MLT video playlist"
@@ -45662,7 +45662,7 @@ msgstr "%1h"
 #~ "Kdenlive needs to be restarted to apply the icon theme change. Restart "
 #~ "now?"
 #~ msgstr ""
-#~ "O Kdenlive deve ser reiniciado para aplicar a mudança no tema de ícones. "
+#~ "O MEditor deve ser reiniciado para aplicar a mudança no tema de ícones. "
 #~ "Reiniciar agora?"
 
 #, fuzzy
@@ -45815,7 +45815,7 @@ msgstr "%1h"
 #~ "Your OpenTimelineIO module does not include Kdenlive adapter.\n"
 #~ "Please install version >= 0.12\n"
 #~ msgstr ""
-#~ "Seu módulo OpenTimelineIO não inclui o adaptador do Kdenlive.\n"
+#~ "Seu módulo OpenTimelineIO não inclui o adaptador do MEditor.\n"
 #~ "Instale a versão >= 0.12\n"
 
 #, fuzzy
@@ -45847,7 +45847,7 @@ msgstr "%1h"
 #~ "Kdenlive needs to be restarted to change this setting. Do you want to "
 #~ "proceed?"
 #~ msgstr ""
-#~ "O Kdenlive precisa ser reiniciado para alterar esta configuração. Deseja "
+#~ "O MEditor precisa ser reiniciado para alterar esta configuração. Deseja "
 #~ "proceder?"
 
 #~ msgid "Loading project"
@@ -45893,7 +45893,7 @@ msgstr "%1h"
 #, fuzzy
 #~| msgid "Kdenlive project (*.kdenlive)"
 #~ msgid "Kdenlive Project (*.kdenlive)"
-#~ msgstr "Projeto do Kdenlive (*.kdenlive)"
+#~ msgstr "Projeto do MEditor (*.kdenlive)"
 
 #, fuzzy
 #~| msgid "Archived project (*.tar.gz *.zip)"
@@ -45901,7 +45901,7 @@ msgstr "%1h"
 #~ msgstr "Projeto arquivado (*.tar.gz *.zip)"
 
 #~ msgid "Kdenlive title (*.kdenlivetitle)"
-#~ msgstr "Título do Kdenlive (*.kdenlivetitle)"
+#~ msgstr "Título do MEditor (*.kdenlivetitle)"
 
 #~ msgid "Rename guide"
 #~ msgstr "Renomear guia"
@@ -46129,7 +46129,7 @@ msgstr "%1h"
 #~ "please install it and re-enable the feature in Kdenlive"
 #~ msgstr ""
 #~ "A aplicação MediaInfo é necessária para o recurso de gravação de código "
-#~ "de tempo, por favor, instale-o e reative o recurso no Kdenlive"
+#~ "de tempo, por favor, instale-o e reative o recurso no MEditor"
 
 #~ msgid "Please set a path for the Glaxnimate application"
 #~ msgstr "Defina um caminho para o aplicativo Glaxnimate"
@@ -46844,7 +46844,7 @@ msgstr "%1h"
 #~ "settings Environment"
 #~ msgstr ""
 #~ "Falha ao criar proxy. FFmpeg não encontrado, defina o caminho nas "
-#~ "configurações de Ambiente do Kdenlive"
+#~ "configurações de Ambiente do MEditor"
 
 #~ msgid "Align top left"
 #~ msgstr "Alinhar ao canto superior esquerdo"
@@ -47179,7 +47179,7 @@ msgstr "%1h"
 #~ msgstr "Nara Oliveira e Farid Abdelnour | Estúdio Gunga"
 
 #~ msgid "Kdenlive 16.08 icon"
-#~ msgstr "Ícone do Kdenlive 16.08"
+#~ msgstr "Ícone do MEditor 16.08"
 
 #, fuzzy
 #~| msgid "Delete Selected Item"
@@ -47290,7 +47290,7 @@ msgstr "%1h"
 #~ "application on your freesound account?"
 #~ msgstr ""
 #~ "O acesso ao Freesound foi recusado. Será que você autorizou o aplicativo "
-#~ "Kdenlive na sua conta do Freesound?"
+#~ "MEditor na sua conta do Freesound?"
 
 #, fuzzy
 #~| msgid "Download New Wipes..."
@@ -48504,7 +48504,7 @@ msgstr "%1h"
 #~ "Your Kdenlive version was upgraded to version %1. Please take some time "
 #~ "to review the basic settings"
 #~ msgstr ""
-#~ "Seu Kdenlive foi atualizado para a versão %1. Dedique algum tempo para "
+#~ "Seu MEditor foi atualizado para a versão %1. Dedique algum tempo para "
 #~ "revisar as configurações básicas"
 
 #~ msgid ""
@@ -48512,12 +48512,12 @@ msgstr "%1h"
 #~ "some basic settings, you will be ready to edit your first movie in a few "
 #~ "seconds..."
 #~ msgstr ""
-#~ "Esta é a primeira vez que você executa o Kdenlive. Este assistente "
+#~ "Esta é a primeira vez que você executa o MEditor. Este assistente "
 #~ "permitirá que você ajuste algumas configurações básicas, para que possa "
 #~ "editar seu primeiro vídeo daqui a alguns segundos..."
 
 #~ msgid "Discover the features of this Kdenlive release"
-#~ msgstr "Conheça os recursos desta versão do Kdenlive"
+#~ msgstr "Conheça os recursos desta versão do MEditor"
 
 #~ msgid "Checking MLT engine"
 #~ msgstr "Checando motor MLT"
@@ -48605,7 +48605,7 @@ msgstr "%1h"
 #~ msgstr ""
 #~ "Não foi possível reproduzir o vídeo depois de renderizar porque o "
 #~ "aplicativo padrão de reprodução não foi definido.\n"
-#~ "Por favor, defina-o nas configurações do Kdenlive."
+#~ "Por favor, defina-o nas configurações do MEditor."
 
 #~ msgid "Allow vertical moves"
 #~ msgstr "Permitir movimentos verticais"

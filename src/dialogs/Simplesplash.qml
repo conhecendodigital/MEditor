@@ -115,7 +115,7 @@ Window {
                     id: kdelabel
                     anchors.verticalCenter: kdelogo.verticalCenter
                     anchors.left: kdelogo.right
-                    text: KI18n.i18n("Made by KDE")
+                    text: "MEditor • baseado no Kdenlive (KDE)"
                     color: "#ffffff"
                 }
             }

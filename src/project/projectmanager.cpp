@@ -911,6 +911,7 @@ void ProjectManager::finalizeDocumentOpening(KdenliveDoc *document)
 {
     m_notesPlugin->setProject(document);
     Q_EMIT pCore->closeSplash();
+    Q_EMIT docOpened(document);
 }
 
 void ProjectManager::doOpenFile(const QUrl &url, KAutoSaveFile *stale, bool isBackup)
@@ -1588,20 +1589,8 @@ void ProjectManager::slotSwitchTrackTarget()
 
 const QString ProjectManager::getDefaultProjectFormat()
 {
-    // On first run, lets use an HD1080p profile with fps related to timezone country. Then, when the first video is added to a project, if it does not match
-    // our profile, propose a new default.
-    QTimeZone zone;
-    zone = QTimeZone::systemTimeZone();
-
-    QList<int> ntscCountries = {QLocale::Canada,      QLocale::Chile,       QLocale::CostaRica,  QLocale::Cuba,       QLocale::DominicanRepublic,
-                                QLocale::Ecuador,     QLocale::Japan,       QLocale::Mexico,     QLocale::Nicaragua,  QLocale::Panama,
-                                QLocale::Peru,        QLocale::Philippines, QLocale::PuertoRico, QLocale::SouthKorea, QLocale::Taiwan,
-                                QLocale::UnitedStates};
-    bool ntscProject = ntscCountries.contains(zone.territory());
-    if (!ntscProject) {
-        return QStringLiteral("atsc_1080p_25");
-    }
-    return QStringLiteral("atsc_1080p_2997");
+    // MEditor default: perfil vertical 1080x1920 60fps (9:16) para Reels
+    return QStringLiteral("atsc_1080p_60_vertical");
 }
 
 void ProjectManager::saveZone(const QStringList &info, const QDir &dir)

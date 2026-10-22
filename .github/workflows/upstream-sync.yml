@@ -1,0 +1,141 @@
+name: Upstream Kdenlive Sync & Rebase Check
+
+on:
+  schedule:
+    # Verifica novas tags estáveis do Kdenlive toda segunda-feira às 09:00 UTC (06:00 BRT)
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      target_tag_pattern:
+        description: "Padrão de tag estável do upstream Kdenlive (ex.: v26.08.*)"
+        required: false
+        default: "v26.08.*"
+        type: string
+      meditor_branch:
+        description: "Branch principal do MEditor com os patches sobre o upstream"
+        required: false
+        default: "meditor"
+        type: string
+      open_pr:
+        description: "Abrir Pull Request automático se o rebase de teste passar sem conflitos"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+env:
+  UPSTREAM_GIT_URL: "https://invent.kde.org/multimedia/kdenlive.git"
+  TAG_PATTERN: ${{ inputs.target_tag_pattern || 'v26.08.*' }}
+  MEDITOR_BRANCH: ${{ inputs.meditor_branch || 'meditor' }}
+
+jobs:
+  check-and-test-rebase:
+    name: "Buscar tags estáveis (v26.08.x) e testar rebase da branch meditor"
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout do repositório MEditor
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.MEDITOR_BRANCH }}
+          fetch-depth: 0
+
+      - name: Buscar tags estáveis do invent.kde.org/multimedia/kdenlive
+        id: fetch_upstream
+        shell: bash
+        run: |
+          git config user.name "MEditor Upstream Bot"
+          git config user.email "bot@edicaonoponto.com.br"
+
+          if ! git remote | grep -q "^upstream$"; then
+            git remote add upstream "$UPSTREAM_GIT_URL"
+          fi
+          git fetch upstream --tags --prune
+
+          # Encontra a tag estável mais recente que casa com o padrão (ex.: v26.08.2)
+          LATEST_TAG=$(git tag -l "$TAG_PATTERN" --sort=-v:refname | head -n 1)
+          if [ -z "$LATEST_TAG" ]; then
+            echo "Nenhuma tag encontrada para o padrão $TAG_PATTERN"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Tag estável mais recente encontrada no upstream: $LATEST_TAG"
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+
+          # Verifica se a tag já é ancestral da branch meditor atual
+          if git merge-base --is-ancestor "$LATEST_TAG" HEAD; then
+            echo "A branch $MEDITOR_BRANCH já contém a tag $LATEST_TAG."
+            echo "needs_rebase=false" >> "$GITHUB_OUTPUT"
+          else
+            MERGE_BASE=$(git merge-base HEAD "$LATEST_TAG" || git rev-list --max-parents=0 HEAD | head -n 1)
+            echo "A branch $MEDITOR_BRANCH precisa de rebase para $LATEST_TAG (base atual: $MERGE_BASE)."
+            echo "needs_rebase=true" >> "$GITHUB_OUTPUT"
+            echo "merge_base=$MERGE_BASE" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Testar git rebase da branch meditor sobre a nova tag
+        id: test_rebase
+        if: steps.fetch_upstream.outputs.found == 'true' && steps.fetch_upstream.outputs.needs_rebase == 'true'
+        shell: bash
+        run: |
+          LATEST_TAG="${{ steps.fetch_upstream.outputs.latest_tag }}"
+          REBASE_BRANCH="rebase/meditor-${LATEST_TAG}"
+          echo "rebase_branch=$REBASE_BRANCH" >> "$GITHUB_OUTPUT"
+
+          git checkout -B "$REBASE_BRANCH" "origin/$MEDITOR_BRANCH" 2>/dev/null || git checkout -B "$REBASE_BRANCH"
+
+          set +e
+          git rebase --onto "$LATEST_TAG" "${{ steps.fetch_upstream.outputs.merge_base }}" "$REBASE_BRANCH" > /tmp/rebase_output.txt 2>&1
+          REBASE_RC=$?
+          set -e
+
+          cat /tmp/rebase_output.txt
+          if [ $REBASE_RC -eq 0 ]; then
+            echo "rebase_ok=true" >> "$GITHUB_OUTPUT"
+            echo "Rebase limpo concluído sobre $LATEST_TAG!"
+          else
+            echo "rebase_ok=false" >> "$GITHUB_OUTPUT"
+            CONFLICTS=$(git diff --name-only --diff-filter=U | tr '\n' ' ')
+            echo "conflicts=$CONFLICTS" >> "$GITHUB_OUTPUT"
+            git rebase --abort || true
+            echo "::warning::Conflito detectado ao fazer rebase sobre $LATEST_TAG nos arquivos: $CONFLICTS"
+          fi
+
+      - name: Validar integridade dos pontos de contato C++/XML após rebase
+        if: steps.test_rebase.outputs.rebase_ok == 'true'
+        shell: bash
+        run: |
+          if [ -f "./validate-xml-files.py" ]; then
+            python3 -u ./validate-xml-files.py --check-all || true
+          fi
+          # Verifica se os arquivos isolados da API MEditor continuam presentes após o rebase
+          if [ -d "src/meditor" ]; then
+            ls -la src/meditor/
+          fi
+
+      - name: Publicar branch de rebase e abrir Pull Request
+        if: steps.test_rebase.outputs.rebase_ok == 'true' && (inputs.open_pr == true || github.event_name == 'schedule')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          LATEST_TAG="${{ steps.fetch_upstream.outputs.latest_tag }}"
+          REBASE_BRANCH="${{ steps.test_rebase.outputs.rebase_branch }}"
+
+          git push --force-with-lease origin "$REBASE_BRANCH"
+          git push origin "$LATEST_TAG" || true
+
+          EXISTING_PR=$(gh pr list --head "$REBASE_BRANCH" --base "$MEDITOR_BRANCH" --json number --jq '.[0].number')
+          if [ -z "$EXISTING_PR" ]; then
+            gh pr create \
+              --base "$MEDITOR_BRANCH" \
+              --head "$REBASE_BRANCH" \
+              --title "chore(upstream): rebase MEditor sobre Kdenlive ${LATEST_TAG}" \
+              --body "Rebase automatizado dos commits do **MEditor** (rebranding, presets e `src/meditor/`) sobre a release estável **${LATEST_TAG}** de \`invent.kde.org/multimedia/kdenlive\`."
+          fi

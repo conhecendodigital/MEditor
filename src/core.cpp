@@ -239,8 +239,8 @@ void Core::buildSplash(bool firstRun, bool showWelcome, bool showCrashRecovery, 
                 profileIds = {KdenliveSettings::default_profile()};
                 profileNames = {KdenliveSettings::default_profile()};
             } else {
-                profileIds = {QStringLiteral("atsc_1080p_25")};
-                profileNames = {QStringLiteral("HD 1080p 25 fps")};
+                profileIds = {QStringLiteral("atsc_1080p_60_vertical")};
+                profileNames = {QStringLiteral("Vertical HD 60 fps (Reels 1080x1920)")};
             }
         }
         m_splash = new Splash(QString(KDENLIVE_VERSION), urls.values(), profileIds, profileNames, true, firstRun, showCrashRecovery, wasUpgraded);

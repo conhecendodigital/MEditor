@@ -1,6 +1,6 @@
 # KDE Config File
 [Desktop Entry]
-Name=Kdenlive
+Name=MEditor
 Name[ar]=كدنلايف
 Name[ast]=Kdenlive
 Name[az]=Kdenlive
@@ -38,8 +38,8 @@ Name[nds]=Kdenlive
 Name[nl]=Kdenlive
 Name[nn]=Kdenlive
 Name[pl]=Kdenlive
-Name[pt]=Kdenlive
-Name[pt_BR]=Kdenlive
+Name[pt]=MEditor
+Name[pt_BR]=MEditor
 Name[ro]=Kdenlive
 Name[ru]=Kdenlive
 Name[sa]=क्डेन्लिव्
@@ -133,7 +133,7 @@ Comment[nl]=Niet-lineaire video-bewerker door KDE
 Comment[nn]=Program for ikkje-lineær videoredigering
 Comment[pl]=Nieliniowy edytor wideo w ramach KDE
 Comment[pt]=Editor de vídeo não-linear do KDE
-Comment[pt_BR]=Editor de vídeo não-linear do KDE
+Comment[pt_BR]=Editor de vídeo Edição no Ponto (baseado no Kdenlive/KDE)
 Comment[ru]=Нелинейный видеоредактор от KDE
 Comment[sa]=KDE द्वारा अरैखिक विडियो सम्पादक
 Comment[sk]=Nelineárny editor videa pre KDE
@@ -196,4 +196,4 @@ Keywords[ug]=editing;video;audio;mlt;kde;تەھرىرلىگۈچ;سىن;ئۈن;ئ
 Keywords[uk]=editing;video;audio;mlt;kde;редагування;відео;звук;аудіо;млт;кдє;
 Keywords[zh_CN]=editing;video;audio;mlt;kde;编辑;剪辑;非编;视频;音频;bianji;jianji;feibian;shipin;yinpin;
 Keywords[zh_TW]=editing;video;audio;mlt;kde;影片;影像;編輯;剪輯;
-X-DBUS-ServiceName=org.kde.kdenlive
+X-DBUS-ServiceName=br.com.edicaonoponto.meditor

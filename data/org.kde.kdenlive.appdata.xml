@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component type="desktop-application">
-  <id>org.kde.kdenlive.desktop</id>
+  <id>br.com.edicaonoponto.meditor.desktop</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
   <developer_name translate="no">KDE</developer_name>
@@ -8,7 +8,7 @@
     <color type="primary" scheme_preference="light">#CAE3FC</color>
     <color type="primary" scheme_preference="dark">#315C7F</color>
   </branding>
-  <name>Kdenlive</name>
+  <name>MEditor</name>
   <name xml:lang="ar">كدنلايف</name>
   <name xml:lang="ast">Kdenlive</name>
   <name xml:lang="az">Kdenlive</name>
@@ -41,7 +41,7 @@
   <name xml:lang="nn">Kdenlive</name>
   <name xml:lang="pl">Kdenlive</name>
   <name xml:lang="pt">Kdenlive</name>
-  <name xml:lang="pt-BR">Kdenlive</name>
+  <name xml:lang="pt-BR">MEditor</name>
   <name xml:lang="ru">Kdenlive</name>
   <name xml:lang="sa">क्डेन्लिव्</name>
   <name xml:lang="sk">Kdenlive</name>

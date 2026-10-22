@@ -37,6 +37,7 @@ SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
 #include "layouts/layoutmanagement.h"
 #include "library/librarywidget.h"
 #include "render/renderserver.h"
+#include "meditor/apiserver.h"
 
 #ifndef NODBUS
 #include <QDBusConnectionInterface>
@@ -174,6 +175,7 @@ void MainWindow::init()
 {
     // Handle communication with the renderer app
     new RenderServer(this);
+    new MEditorApiServer(this);
     QString defaultProfile = KdenliveSettings::default_profile();
 
     pCore->setCurrentProfile(defaultProfile.isEmpty() ? ProjectManager::getDefaultProjectFormat() : defaultProfile);

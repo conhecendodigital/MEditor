@@ -211,7 +211,7 @@ Window {
                     anchors.right: parent.right
                     anchors.margins: 10
                     color: "#FFFFFF"
-                    text: KI18n.i18n("Made by KDE")
+                    text: "MEditor • baseado no Kdenlive (KDE)"
                 }
 
                 // Made By KDE
@@ -842,7 +842,7 @@ Window {
                                     implicitWidth: horizontalFrame.implicitHeight * 16 / 9
                                     Layout.alignment: Qt.AlignHCenter
                                     radius: 5
-                                    property bool checked: true
+                                    property bool checked: false
                                     property int lastIndex: -1
                                     property int lastFpsIndex: -1
                                     border.color: checked ? activePalette.highlight : horizontalArea.containsMouse ? activePalette.highlight : activePalette.text
@@ -889,7 +889,7 @@ Window {
                                     implicitWidth: verticalFrame.implicitHeight * 9 / 16
                                     Layout.alignment: Qt.AlignHCenter
                                     radius: 5
-                                    property bool checked: false
+                                    property bool checked: true
                                     property int lastIndex: -1
                                     property int lastFpsIndex: -1
                                     border.color: checked ? activePalette.highlight : verticalArea.containsMouse ? activePalette.highlight : activePalette.text
@@ -946,7 +946,7 @@ Window {
                                         valueRole: "value"
                                         property bool sdProfile: horizontalFrame.checked && (currentValue.startsWith("720x480x") || currentValue.startsWith("720x576x"))
                                         Component.onCompleted: {
-                                            let index = indexOfValue("1920x1080x709x1x1x16x9");
+                                            let index = indexOfValue(horizontalFrame.checked ? "1920x1080x709x1x1x16x9" : "1080x1920x709x1x1x9x16");
                                             if (index >= 0) {
                                                 currentIndex = index
                                             }
@@ -972,7 +972,7 @@ Window {
                                         textRole: "text"
                                         valueRole: "value"
                                         Component.onCompleted: {
-                                            let index = indexOfValue(splash.palFps ? "25" : horizontalFrame.checked ? "24000/1001" : "30");
+                                            let index = indexOfValue(horizontalFrame.checked ? (splash.palFps ? "25" : "24000/1001") : "60");
                                             if (index >= 0) {
                                                 currentIndex = index
                                             }

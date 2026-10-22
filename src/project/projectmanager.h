@@ -262,6 +262,9 @@ public Q_SLOTS:
     /** @brief Final steps to be done once the timeline widget is fully build and has its final height */
     void polishTimelines(QList<QUuid> uuids);
 
+Q_SIGNALS:
+    void docOpened(KdenliveDoc *document);
+
 private Q_SLOTS:
     void slotRevert();
     /** @brief A timeline sequence duration changed, update our properties. */

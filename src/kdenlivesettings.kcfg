@@ -1033,11 +1033,11 @@
     </entry>
     <entry name="project_fps" type="Double">
       <label>Current project fps.</label>
-      <default>25</default>
+      <default>60</default>
     </entry>
     <entry name="default_profile" type="String">
       <label>Default project format.</label>
-      <default></default>
+      <default>atsc_1080p_60_vertical</default>
     </entry>
     <entry name="kdockLayout" type="String">
       <label>Default project layout.</label>
@@ -1131,7 +1131,7 @@
     </entry>
     <entry name="renderProfile" type="String">
       <label>Default render profile.</label>
-      <default>MP4-H264/AAC</default>
+      <default>Reels 1080×1920 60 fps HEVC</default>
     </entry>
     <entry name="keepRenderLogFiles" type="Bool">
       <label>Should we delete log files after successful render.</label>
@@ -1148,11 +1148,11 @@
     </entry>
     <entry name="showClipMonitorSafeZone" type="Bool">
       <label>Show monitor safe zones.</label>
-      <default>false</default>
+      <default>true</default>
     </entry>
     <entry name="showProjectMonitorSafeZone" type="Bool">
       <label>Show monitor safe zones.</label>
-      <default>false</default>
+      <default>true</default>
     </entry>
 
     <entry name="displayProjectMonitorInfo" type="Int">
@@ -1464,11 +1464,11 @@
   <group name="startup">
     <entry name="force_breeze" type="Bool">
       <label>Force breeze icon theme for consistent look.</label>
-      <default>false</default>
+      <default>true</default>
     </entry>
     <entry name="use_dark_breeze" type="Bool">
       <label>Force breeze icon color theme for consistent look.</label>
-      <default>false</default>
+      <default>true</default>
     </entry>
     <entry name="showWelcome" type="Bool">
       <label>Show Welcome page on Start.</label>
@@ -1693,6 +1693,12 @@
     <entry name="mediaBrowserInlinePreview" type="Bool">
       <label>Show inline preview in media browser.</label>
       <default>true</default>
+    </entry>
+    </group>
+    <group name="meditor">
+    <entry name="meditor_api_enabled" type="Bool">
+      <label>Enable MEditor local JSON-RPC API server.</label>
+      <default>false</default>
     </entry>
     </group>
 </kcfg>

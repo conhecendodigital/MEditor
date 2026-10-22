@@ -1,0 +1,613 @@
+name: MEditor Build & Release (Craft Qt6)
+
+on:
+  push:
+    tags:
+      - "v*"
+      - "meditor-v*"
+  workflow_dispatch:
+    inputs:
+      macos_runner:
+        description: "Runner para macOS arm64 ('macos-15' do GitHub ou 'self-hosted' no Mac do Matheus)"
+        required: false
+        default: "macos-15"
+        type: choice
+        options:
+          - "macos-15"
+          - "self-hosted"
+      api_version:
+        description: "Versão do protocolo JSON-RPC MEditor API para o manifesto latest.json"
+        required: false
+        default: "1"
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  CRAFT_CONFIG_REPO: "https://invent.kde.org/sysadmin/craft-ci.git"
+  CRAFTMASTER_REPO: "https://invent.kde.org/packaging/craftmaster.git"
+  MEDITOR_API_VERSION: ${{ inputs.api_version || '1' }}
+
+jobs:
+  # ============================================================================
+  # 1. macOS Apple Silicon (arm64) -> .dmg + .app.tar.zst (+ Codesign/Notary)
+  # ============================================================================
+  macos-arm64:
+    name: "macOS arm64 (.dmg + .app.tar.zst)"
+    runs-on: ${{ inputs.macos_runner || 'macos-15' }}
+    timeout-minutes: 240
+    steps:
+      - name: Checkout MEditor (código-fonte GPL-3.0)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Liberar espaço em disco no runner GitHub-hosted
+        if: runner.environment == 'github-hosted'
+        shell: bash
+        run: |
+          echo "Espaço antes da limpeza:"
+          df -h /
+          sudo rm -rf /Applications/Xcode_15*.app /Library/Developer/CoreSimulator || true
+          brew cleanup -s || true
+          echo "Espaço após limpeza:"
+          df -h /
+
+      - name: Clonar CraftMaster e Craft-CI
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/craft-work"
+          git clone --depth=1 "$CRAFTMASTER_REPO" "$RUNNER_TEMP/craft-work/craftmaster"
+          git clone --depth=1 "$CRAFT_CONFIG_REPO" "$RUNNER_TEMP/craft-work/craft-ci"
+
+      - name: Configurar Craft (ABI macos-arm-clang + cache binário KDE Qt6)
+        shell: bash
+        run: |
+          CRAFT_WORK="$RUNNER_TEMP/craft-work"
+          OVERRIDE_INI="$GITHUB_WORKSPACE/patches/etapa5-ci/craft-override.ini"
+          if [ ! -f "$OVERRIDE_INI" ]; then
+            OVERRIDE_INI="$GITHUB_WORKSPACE/craft-override.ini"
+          fi
+          python3 "$CRAFT_WORK/craftmaster/CraftMaster.py" \
+            --config "$CRAFT_WORK/craft-ci/qt6/CraftConfig.ini" \
+            --config-override "$OVERRIDE_INI" \
+            --target macos-arm-clang \
+            --variables "CraftRoot=$CRAFT_WORK/craft-root" \
+            --setup
+
+          python3 "$CRAFT_WORK/craftmaster/CraftMaster.py" \
+            --config "$CRAFT_WORK/craft-ci/qt6/CraftConfig.ini" \
+            --config-override "$OVERRIDE_INI" \
+            --target macos-arm-clang \
+            --variables "CraftRoot=$CRAFT_WORK/craft-root" \
+            -c -i --options virtual.ignored=True --update craft
+
+      - name: Aplicar patch do Blueprint MEditor e Entitlements
+        shell: bash
+        run: |
+          CRAFT_WORK="$RUNNER_TEMP/craft-work"
+          PATCH_SCRIPT="$GITHUB_WORKSPACE/patches/etapa5-ci/meditor_blueprint_patch.py"
+          if [ ! -f "$PATCH_SCRIPT" ]; then
+            PATCH_SCRIPT="$GITHUB_WORKSPACE/meditor_blueprint_patch.py"
+          fi
+          python3 "$PATCH_SCRIPT" \
+            --craft-root "$CRAFT_WORK/craft-root" \
+            --src-dir "$GITHUB_WORKSPACE"
+
+      - name: Instalar dependências pré-compiladas do cache KDE
+        shell: bash
+        run: |
+          CRAFT_WORK="$RUNNER_TEMP/craft-work"
+          OVERRIDE_INI="$GITHUB_WORKSPACE/patches/etapa5-ci/craft-override.ini"
+          [ -f "$OVERRIDE_INI" ] || OVERRIDE_INI="$GITHUB_WORKSPACE/craft-override.ini"
+          python3 "$CRAFT_WORK/craftmaster/CraftMaster.py" \
+            --config "$CRAFT_WORK/craft-ci/qt6/CraftConfig.ini" \
+            --config-override "$OVERRIDE_INI" \
+            --target macos-arm-clang \
+            --variables "CraftRoot=$CRAFT_WORK/craft-root" \
+            -c --install-deps --options "[CodeSigning]Enabled=False" kdenlive
+
+      - name: Compilar MEditor (sem cache para o alvo principal)
+        shell: bash
+        run: |
+          CRAFT_WORK="$RUNNER_TEMP/craft-work"
+          OVERRIDE_INI="$GITHUB_WORKSPACE/patches/etapa5-ci/craft-override.ini"
+          [ -f "$OVERRIDE_INI" ] || OVERRIDE_INI="$GITHUB_WORKSPACE/craft-override.ini"
+          python3 "$CRAFT_WORK/craftmaster/CraftMaster.py" \
+            --config "$CRAFT_WORK/craft-ci/qt6/CraftConfig.ini" \
+            --config-override "$OVERRIDE_INI" \
+            --target macos-arm-clang \
+            --variables "CraftRoot=$CRAFT_WORK/craft-root" \
+            -c --no-cache --options "kdenlive.srcDir=$GITHUB_WORKSPACE" kdenlive
+
+      - name: Empacotar MEditor (.dmg e .app)
+        shell: bash
+        run: |
+          CRAFT_WORK="$RUNNER_TEMP/craft-work"
+          OVERRIDE_INI="$GITHUB_WORKSPACE/patches/etapa5-ci/craft-override.ini"
+          [ -f "$OVERRIDE_INI" ] || OVERRIDE_INI="$GITHUB_WORKSPACE/craft-override.ini"
+          python3 "$CRAFT_WORK/craftmaster/CraftMaster.py" \
+            --config "$CRAFT_WORK/craft-ci/qt6/CraftConfig.ini" \
+            --config-override "$OVERRIDE_INI" \
+            --target macos-arm-clang \
+            --variables "CraftRoot=$CRAFT_WORK/craft-root" \
+            -c --package --options "kdenlive.srcDir=$GITHUB_WORKSPACE" kdenlive
+
+          mkdir -p "$GITHUB_WORKSPACE/dist/macos-arm64"
+          PKG_DIR=$(python3 "$CRAFT_WORK/craftmaster/CraftMaster.py" \
+            --config "$CRAFT_WORK/craft-ci/qt6/CraftConfig.ini" \
+            --config-override "$OVERRIDE_INI" \
+            --target macos-arm-clang \
+            --variables "CraftRoot=$CRAFT_WORK/craft-root" \
+            -c -q --get "packageDestinationDir()" virtual/base | tail -n 1 | tr -d '\r')
+
+          find "$PKG_DIR" -maxdepth 2 -name "*.dmg" -exec cp -v {} "$GITHUB_WORKSPACE/dist/macos-arm64/MEditor-macos-arm64.dmg" \;
+
+          # Localiza o bundle .app gerado na árvore de image/archive do Craft para gerar o .app.tar.zst
+          APP_BUNDLE=$(find "$CRAFT_WORK/craft-root" -type d \( -name "MEditor.app" -o -name "kdenlive.app" \) | head -n 1)
+          if [ -n "$APP_BUNDLE" ]; then
+            rm -rf "$RUNNER_TEMP/MEditor.app"
+            ditto "$APP_BUNDLE" "$RUNNER_TEMP/MEditor.app"
+          else
+            # Fallback: extrai MEditor.app de dentro do .dmg recém-criado
+            MOUNT_DIR=$(mktemp -d)
+            hdiutil attach -nobrowse -readonly -mountpoint "$MOUNT_DIR" "$GITHUB_WORKSPACE/dist/macos-arm64/MEditor-macos-arm64.dmg"
+            APP_IN_DMG=$(find "$MOUNT_DIR" -maxdepth 2 -name "*.app" | head -n 1)
+            ditto "$APP_IN_DMG" "$RUNNER_TEMP/MEditor.app"
+            hdiutil detach "$MOUNT_DIR" -force
+          fi
+
+      - name: Codesign + Notarização Apple Developer (condicional aos secrets)
+        env:
+          APPLE_DEVELOPER_CERT_P12: ${{ secrets.APPLE_DEVELOPER_CERT_P12 }}
+          APPLE_DEVELOPER_CERT_PASSWORD: ${{ secrets.APPLE_DEVELOPER_CERT_PASSWORD }}
+          APPLE_DEVELOPER_ID: ${{ secrets.APPLE_DEVELOPER_ID }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        shell: bash
+        run: |
+          if [ -z "$APPLE_DEVELOPER_CERT_P12" ] || [ -z "$APPLE_DEVELOPER_ID" ]; then
+            echo "Secrets da Apple Developer não configurados; pulando assinatura e notarização (instalação via kit remove quarentena)."
+            exit 0
+          fi
+
+          KEYCHAIN_PATH="$RUNNER_TEMP/meditor-signing.keychain-db"
+          KEYCHAIN_PASS=$(uuidgen)
+          echo "$APPLE_DEVELOPER_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+
+          security create-keychain -p "$KEYCHAIN_PASS" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASS" "$KEYCHAIN_PATH"
+          security import "$RUNNER_TEMP/cert.p12" -P "$APPLE_DEVELOPER_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASS" "$KEYCHAIN_PATH"
+
+          ENTITLEMENTS="$GITHUB_WORKSPACE/kdenlive.entitlements"
+          codesign --force --deep --options runtime --timestamp \
+            --entitlements "$ENTITLEMENTS" \
+            --sign "$APPLE_DEVELOPER_ID" \
+            "$RUNNER_TEMP/MEditor.app"
+
+          # Recria o .dmg a partir do MEditor.app assinado e assina o .dmg
+          rm -f "$GITHUB_WORKSPACE/dist/macos-arm64/MEditor-macos-arm64.dmg"
+          hdiutil create -volname "MEditor" -srcfolder "$RUNNER_TEMP/MEditor.app" -ov -format UDZO \
+            "$GITHUB_WORKSPACE/dist/macos-arm64/MEditor-macos-arm64.dmg"
+          codesign --force --timestamp --sign "$APPLE_DEVELOPER_ID" \
+            "$GITHUB_WORKSPACE/dist/macos-arm64/MEditor-macos-arm64.dmg"
+
+          if [ -n "$APPLE_API_KEY_P8" ] && [ -n "$APPLE_API_KEY_ID" ] && [ -n "$APPLE_API_ISSUER_ID" ]; then
+            echo "$APPLE_API_KEY_P8" > "$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
+            xcrun notarytool submit "$GITHUB_WORKSPACE/dist/macos-arm64/MEditor-macos-arm64.dmg" \
+              --key "$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8" \
+              --key-id "$APPLE_API_KEY_ID" \
+              --issuer "$APPLE_API_ISSUER_ID" \
+              --wait
+            xcrun stapler staple "$GITHUB_WORKSPACE/dist/macos-arm64/MEditor-macos-arm64.dmg"
+            rm -f "$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
+          fi
+
+          rm -f "$RUNNER_TEMP/cert.p12"
+          security delete-keychain "$KEYCHAIN_PATH" || true
+
+      - name: Gerar pacote silencioso .app.tar.zst, hashes SHA256 e manifesto de fontes Craft
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP"
+          tar -I "zstd -19 -T0" -cf "$GITHUB_WORKSPACE/dist/macos-arm64/MEditor-macos-arm64.app.tar.zst" MEditor.app
+          cd "$GITHUB_WORKSPACE/dist/macos-arm64"
+          shasum -a 256 MEditor-macos-arm64.dmg > MEditor-macos-arm64.dmg.sha256
+          shasum -a 256 MEditor-macos-arm64.app.tar.zst > MEditor-macos-arm64.app.tar.zst.sha256
+
+          # Lista de pacotes/fontes baixados pelo Craft para conformidade GPL-3.0 (§9.2)
+          find "$RUNNER_TEMP/craft-work/craft-root/download" -type f > "$GITHUB_WORKSPACE/dist/macos-arm64/craft-downloads-macos-arm64.txt" 2>/dev/null || true
+
+      - name: Upload de artefatos macOS arm64
+        uses: actions/upload-artifact@v4
+        with:
+          name: meditor-macos-arm64
+          path: dist/macos-arm64/*
+          if-no-files-found: error
+
+  # ============================================================================
+  # 2. Windows x64 (MSVC 2022) -> .exe (NSIS) + .7z (instalação silenciosa)
+  # ============================================================================
+  windows-x64:
+    name: "Windows x64 (.exe NSIS + .7z)"
+    runs-on: windows-2022
+    timeout-minutes: 240
+    steps:
+      - name: Checkout MEditor (código-fonte GPL-3.0)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clonar CraftMaster e Craft-CI
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP/craft-work" | Out-Null
+          git clone --depth=1 "$env:CRAFTMASTER_REPO" "$env:RUNNER_TEMP/craft-work/craftmaster"
+          git clone --depth=1 "$env:CRAFT_CONFIG_REPO" "$env:RUNNER_TEMP/craft-work/craft-ci"
+
+      - name: Configurar Craft (ABI windows-cl-msvc2022-x86_64 + cache binário KDE Qt6)
+        shell: pwsh
+        run: |
+          $CraftWork = "$env:RUNNER_TEMP/craft-work"
+          $OverrideIni = "$env:GITHUB_WORKSPACE/patches/etapa5-ci/craft-override.ini"
+          if (-not (Test-Path $OverrideIni)) { $OverrideIni = "$env:GITHUB_WORKSPACE/craft-override.ini" }
+
+          python "$CraftWork/craftmaster/CraftMaster.py" `
+            --config "$CraftWork/craft-ci/qt6/CraftConfig.ini" `
+            --config-override "$OverrideIni" `
+            --target windows-cl-msvc2022-x86_64 `
+            --variables "CraftRoot=C:/CraftRoot" `
+            --setup
+
+          python "$CraftWork/craftmaster/CraftMaster.py" `
+            --config "$CraftWork/craft-ci/qt6/CraftConfig.ini" `
+            --config-override "$OverrideIni" `
+            --target windows-cl-msvc2022-x86_64 `
+            --variables "CraftRoot=C:/CraftRoot" `
+            -c -i --options virtual.ignored=True --update craft
+
+      - name: Aplicar patch do Blueprint MEditor (appname, ícones e NSIS registry_hook)
+        shell: pwsh
+        run: |
+          $PatchScript = "$env:GITHUB_WORKSPACE/patches/etapa5-ci/meditor_blueprint_patch.py"
+          if (-not (Test-Path $PatchScript)) { $PatchScript = "$env:GITHUB_WORKSPACE/meditor_blueprint_patch.py" }
+          python "$PatchScript" --craft-root "C:/CraftRoot" --src-dir "$env:GITHUB_WORKSPACE"
+
+      - name: Instalar dependências pré-compiladas e compilar MEditor
+        shell: pwsh
+        run: |
+          $CraftWork = "$env:RUNNER_TEMP/craft-work"
+          $OverrideIni = "$env:GITHUB_WORKSPACE/patches/etapa5-ci/craft-override.ini"
+          if (-not (Test-Path $OverrideIni)) { $OverrideIni = "$env:GITHUB_WORKSPACE/craft-override.ini" }
+
+          python "$CraftWork/craftmaster/CraftMaster.py" `
+            --config "$CraftWork/craft-ci/qt6/CraftConfig.ini" `
+            --config-override "$OverrideIni" `
+            --target windows-cl-msvc2022-x86_64 `
+            --variables "CraftRoot=C:/CraftRoot" `
+            -c --install-deps --options "[CodeSigning]Enabled=False" kdenlive
+
+          python "$CraftWork/craftmaster/CraftMaster.py" `
+            --config "$CraftWork/craft-ci/qt6/CraftConfig.ini" `
+            --config-override "$OverrideIni" `
+            --target windows-cl-msvc2022-x86_64 `
+            --variables "CraftRoot=C:/CraftRoot" `
+            -c --no-cache --options "kdenlive.srcDir=$env:GITHUB_WORKSPACE" kdenlive
+
+      - name: Empacotar instalador NSIS (.exe) e arquivo portátil (.7z)
+        shell: pwsh
+        run: |
+          $CraftWork = "$env:RUNNER_TEMP/craft-work"
+          $OverrideIni = "$env:GITHUB_WORKSPACE/patches/etapa5-ci/craft-override.ini"
+          if (-not (Test-Path $OverrideIni)) { $OverrideIni = "$env:GITHUB_WORKSPACE/craft-override.ini" }
+
+          python "$CraftWork/craftmaster/CraftMaster.py" `
+            --config "$CraftWork/craft-ci/qt6/CraftConfig.ini" `
+            --config-override "$OverrideIni" `
+            --target windows-cl-msvc2022-x86_64 `
+            --variables "CraftRoot=C:/CraftRoot" `
+            -c -i --update nsis
+
+          # Gera instalador .exe (NullsoftInstallerPackager) e pacote .7z (SevenZipPackager)
+          python "$CraftWork/craftmaster/CraftMaster.py" `
+            --config "$CraftWork/craft-ci/qt6/CraftConfig.ini" `
+            --config-override "$OverrideIni" `
+            --target windows-cl-msvc2022-x86_64 `
+            --variables "CraftRoot=C:/CraftRoot" `
+            -c --package --options "kdenlive.srcDir=$env:GITHUB_WORKSPACE" --options "[CodeSigning]Enabled=False" kdenlive
+
+          python "$CraftWork/craftmaster/CraftMaster.py" `
+            --config "$CraftWork/craft-ci/qt6/CraftConfig.ini" `
+            --config-override "$OverrideIni" `
+            --target windows-cl-msvc2022-x86_64 `
+            --variables "CraftRoot=C:/CraftRoot" `
+            -c --package --options "[Packager]PackageType=SevenZipPackager" --options "kdenlive.srcDir=$env:GITHUB_WORKSPACE" --options "[CodeSigning]Enabled=False" kdenlive
+
+          $PkgDir = (python "$CraftWork/craftmaster/CraftMaster.py" `
+            --config "$CraftWork/craft-ci/qt6/CraftConfig.ini" `
+            --config-override "$OverrideIni" `
+            --target windows-cl-msvc2022-x86_64 `
+            --variables "CraftRoot=C:/CraftRoot" `
+            -c -q --get "packageDestinationDir()" virtual/base | Select-Object -Last 1).Trim()
+
+          $DistDir = "$env:GITHUB_WORKSPACE/dist/windows-x64"
+          New-Item -ItemType Directory -Force -Path $DistDir | Out-Null
+
+          $ExeFile = Get-ChildItem -Path $PkgDir -Recurse -Filter "*.exe" | Select-Object -First 1
+          if ($ExeFile) {
+            Copy-Item $ExeFile.FullName -Destination "$DistDir/MEditor-windows-x64-setup.exe"
+            $ExeHash = (Get-FileHash "$DistDir/MEditor-windows-x64-setup.exe" -Algorithm SHA256).Hash.ToLower()
+            "$ExeHash  MEditor-windows-x64-setup.exe" | Out-File -Encoding utf8 "$DistDir/MEditor-windows-x64-setup.exe.sha256"
+          }
+
+          $SevenZipFile = Get-ChildItem -Path $PkgDir -Recurse -Filter "*.7z" | Select-Object -First 1
+          if ($SevenZipFile) {
+            Copy-Item $SevenZipFile.FullName -Destination "$DistDir/MEditor-windows-x64.7z"
+            $SevenZipHash = (Get-FileHash "$DistDir/MEditor-windows-x64.7z" -Algorithm SHA256).Hash.ToLower()
+            "$SevenZipHash  MEditor-windows-x64.7z" | Out-File -Encoding utf8 "$DistDir/MEditor-windows-x64.7z.sha256"
+          }
+
+          Get-ChildItem -Path "C:/CraftRoot/download" -Recurse -File -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty FullName |
+            Out-File -Encoding utf8 "$DistDir/craft-downloads-windows-x64.txt"
+
+      - name: Upload de artefatos Windows x64
+        uses: actions/upload-artifact@v4
+        with:
+          name: meditor-windows-x64
+          path: dist/windows-x64/*
+          if-no-files-found: error
+
+  # ============================================================================
+  # 3. Linux x64 (Ubuntu 22.04) -> .AppImage
+  # ============================================================================
+  linux-x64:
+    name: "Linux x64 (.AppImage)"
+    runs-on: ubuntu-22.04
+    timeout-minutes: 240
+    steps:
+      - name: Checkout MEditor (código-fonte GPL-3.0)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Instalar dependências de sistema para Craft e AppImage
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ninja-build python3-pip python3-venv \
+            libfuse2 desktop-file-utils zstd patchelf file wget curl
+
+      - name: Clonar CraftMaster e Craft-CI
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/craft-work"
+          git clone --depth=1 "$CRAFTMASTER_REPO" "$RUNNER_TEMP/craft-work/craftmaster"
+          git clone --depth=1 "$CRAFT_CONFIG_REPO" "$RUNNER_TEMP/craft-work/craft-ci"
+
+      - name: Configurar Craft (ABI linux-64-gcc + cache binário KDE Qt6)
+        shell: bash
+        run: |
+          CRAFT_WORK="$RUNNER_TEMP/craft-work"
+          OVERRIDE_INI="$GITHUB_WORKSPACE/patches/etapa5-ci/craft-override.ini"
+          [ -f "$OVERRIDE_INI" ] || OVERRIDE_INI="$GITHUB_WORKSPACE/craft-override.ini"
+
+          python3 "$CRAFT_WORK/craftmaster/CraftMaster.py" \
+            --config "$CRAFT_WORK/craft-ci/qt6/CraftConfig.ini" \
+            --config-override "$OVERRIDE_INI" \
+            --target linux-64-gcc \
+            --variables "CraftRoot=$CRAFT_WORK/craft-root" \
+            --setup
+
+          python3 "$CRAFT_WORK/craftmaster/CraftMaster.py" \
+            --config "$CRAFT_WORK/craft-ci/qt6/CraftConfig.ini" \
+            --config-override "$OVERRIDE_INI" \
+            --target linux-64-gcc \
+            --variables "CraftRoot=$CRAFT_WORK/craft-root" \
+            -c -i --options virtual.ignored=True --update craft
+
+      - name: Aplicar patch do Blueprint MEditor
+        shell: bash
+        run: |
+          CRAFT_WORK="$RUNNER_TEMP/craft-work"
+          PATCH_SCRIPT="$GITHUB_WORKSPACE/patches/etapa5-ci/meditor_blueprint_patch.py"
+          [ -f "$PATCH_SCRIPT" ] || PATCH_SCRIPT="$GITHUB_WORKSPACE/meditor_blueprint_patch.py"
+          python3 "$PATCH_SCRIPT" \
+            --craft-root "$CRAFT_WORK/craft-root" \
+            --src-dir "$GITHUB_WORKSPACE"
+
+      - name: Instalar dependências pré-compiladas, compilar e gerar .AppImage
+        shell: bash
+        run: |
+          CRAFT_WORK="$RUNNER_TEMP/craft-work"
+          OVERRIDE_INI="$GITHUB_WORKSPACE/patches/etapa5-ci/craft-override.ini"
+          [ -f "$OVERRIDE_INI" ] || OVERRIDE_INI="$GITHUB_WORKSPACE/craft-override.ini"
+
+          python3 "$CRAFT_WORK/craftmaster/CraftMaster.py" \
+            --config "$CRAFT_WORK/craft-ci/qt6/CraftConfig.ini" \
+            --config-override "$OVERRIDE_INI" \
+            --target linux-64-gcc \
+            --variables "CraftRoot=$CRAFT_WORK/craft-root" \
+            -c --install-deps --options "[CodeSigning]Enabled=False" kdenlive
+
+          python3 "$CRAFT_WORK/craftmaster/CraftMaster.py" \
+            --config "$CRAFT_WORK/craft-ci/qt6/CraftConfig.ini" \
+            --config-override "$OVERRIDE_INI" \
+            --target linux-64-gcc \
+            --variables "CraftRoot=$CRAFT_WORK/craft-root" \
+            -c --no-cache --options "kdenlive.srcDir=$GITHUB_WORKSPACE" kdenlive
+
+          python3 "$CRAFT_WORK/craftmaster/CraftMaster.py" \
+            --config "$CRAFT_WORK/craft-ci/qt6/CraftConfig.ini" \
+            --config-override "$OVERRIDE_INI" \
+            --target linux-64-gcc \
+            --variables "CraftRoot=$CRAFT_WORK/craft-root" \
+            -c --package --options "[Packager]PackageType=AppImagePackager" \
+            --options "kdenlive.srcDir=$GITHUB_WORKSPACE" kdenlive
+
+          mkdir -p "$GITHUB_WORKSPACE/dist/linux-x64"
+          PKG_DIR=$(python3 "$CRAFT_WORK/craftmaster/CraftMaster.py" \
+            --config "$CRAFT_WORK/craft-ci/qt6/CraftConfig.ini" \
+            --config-override "$OVERRIDE_INI" \
+            --target linux-64-gcc \
+            --variables "CraftRoot=$CRAFT_WORK/craft-root" \
+            -c -q --get "packageDestinationDir()" virtual/base | tail -n 1 | tr -d '\r')
+
+          find "$PKG_DIR" -maxdepth 2 -name "*.AppImage" -exec cp -v {} "$GITHUB_WORKSPACE/dist/linux-x64/MEditor-linux-x86_64.AppImage" \;
+          chmod +x "$GITHUB_WORKSPACE/dist/linux-x64/MEditor-linux-x86_64.AppImage"
+          cd "$GITHUB_WORKSPACE/dist/linux-x64"
+          sha256sum MEditor-linux-x86_64.AppImage > MEditor-linux-x86_64.AppImage.sha256
+          find "$CRAFT_WORK/craft-root/download" -type f > "$GITHUB_WORKSPACE/dist/linux-x64/craft-downloads-linux-x64.txt" 2>/dev/null || true
+
+      - name: Upload de artefatos Linux x64
+        uses: actions/upload-artifact@v4
+        with:
+          name: meditor-linux-x64
+          path: dist/linux-x64/*
+          if-no-files-found: error
+
+  # ============================================================================
+  # 4. Conformidade GPL-3.0 (§9.2), Manifesto latest.json e GitHub Release
+  # ============================================================================
+  publish-release-gpl:
+    name: "Publicar Código-Fonte (GPL-3.0 §9.2) & Release"
+    runs-on: ubuntu-22.04
+    needs: [macos-arm64, windows-x64, linux-x64]
+    steps:
+      - name: Checkout completo do repositório (com histórico/tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Baixar artefatos compilados dos 3 sistemas
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Empacotar código-fonte completo + blueprints + aviso GPL-3.0 (§9.2)
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${VERSION#meditor-v}"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "main" ] || [ "$VERSION" = "meditor" ]; then
+            VERSION="26.08.2-meditor.$(git rev-parse --short HEAD)"
+          fi
+          echo "MEDITOR_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+          # 1. Tarball do código-fonte correspondente completo (fork + scripts de build + licenças)
+          git archive --format=tar.gz --prefix="meditor-${VERSION}-src/" HEAD \
+            > "release-assets/meditor-${VERSION}-source-gpl3.tar.gz"
+          (cd release-assets && sha256sum "meditor-${VERSION}-source-gpl3.tar.gz" > "meditor-${VERSION}-source-gpl3.tar.gz.sha256")
+
+          # 2. Manifesto consolidado das dependências Craft (Qt, KF6, MLT, FFmpeg, x264/x265, frei0r)
+          cat << 'EOF' > "release-assets/GPL-3.0-SOURCE-OFFER.txt"
+          MEditor — Baseado no Kdenlive (KDE)
+          Licença: GNU General Public License v3.0 (GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL)
+          =====================================================================================
+
+          1. CÓDIGO-FONTE DO MEDITOR
+          O código-fonte completo correspondente a este binário (incluindo patches da API JSON-RPC,
+          rebranding, configurações do KDE Craft e scripts de empacotamento) está anexado nesta
+          mesma Release no arquivo `meditor-*-source-gpl3.tar.gz` e no repositório público:
+          https://github.com/${GITHUB_REPOSITORY}
+
+          2. CÓDIGO-FONTE DAS BIBLIOTECAS E DEPENDÊNCIAS (Qt, KF6, MLT, FFmpeg, frei0r, OpenTimelineIO)
+          Os binários utilizam os pacotes oficiais do KDE Craft (`https://files.kde.org/craft/Qt6/`),
+          cujos tarballs de código-fonte e receitas estão disponíveis em:
+          - https://files.kde.org/craft/Qt6/
+          - https://invent.kde.org/packaging/craft-blueprints-kde
+          Caso qualquer arquivo de origem listado abaixo não esteja acessível nos espelhos do KDE,
+          fornecemos cópia integral sem custo adicional mediante solicitação no repositório oficial
+          (válido por pelo menos 3 anos a partir da data desta Release, conforme §6 da GPL-3.0).
+
+          Lista de pacotes utilizados no build:
+          EOF
+          cat release-assets/craft-downloads-*.txt >> "release-assets/GPL-3.0-SOURCE-OFFER.txt" 2>/dev/null || true
+          rm -f release-assets/craft-downloads-*.txt
+
+      - name: Gerar manifesto latest.json para atualização e instalação silenciosa pelo Kit
+        shell: bash
+        run: |
+          python3 - << 'PY'
+          import json, os, pathlib
+
+          assets_dir = pathlib.Path("release-assets")
+          repo = os.environ.get("GITHUB_REPOSITORY", "edicaonoponto/meditor")
+          tag = os.environ.get("GITHUB_REF_NAME", "latest")
+          version = os.environ.get("MEDITOR_VERSION", "26.08.2")
+          api_version = int(os.environ.get("MEDITOR_API_VERSION", "1"))
+          base_url = f"https://github.com/{repo}/releases/download/{tag}"
+
+          def read_sha256(filename: str) -> str:
+              sha_file = assets_dir / f"{filename}.sha256"
+              if sha_file.exists():
+                  return sha_file.read_text(encoding="utf-8").strip().split()[0]
+              return ""
+
+          manifest = {
+              "version": version,
+              "apiVersion": api_version,
+              "minApiVersion": 1,
+              "tag": tag,
+              "license": "GPL-3.0-or-later",
+              "sourceTarball": {
+                  "filename": f"meditor-{version}-source-gpl3.tar.gz",
+                  "url": f"{base_url}/meditor-{version}-source-gpl3.tar.gz",
+                  "sha256": read_sha256(f"meditor-{version}-source-gpl3.tar.gz"),
+              },
+              "platforms": {
+                  "macos-arm64": {
+                      "archive": {
+                          "filename": "MEditor-macos-arm64.app.tar.zst",
+                          "url": f"{base_url}/MEditor-macos-arm64.app.tar.zst",
+                          "sha256": read_sha256("MEditor-macos-arm64.app.tar.zst"),
+                      },
+                      "dmg": {
+                          "filename": "MEditor-macos-arm64.dmg",
+                          "url": f"{base_url}/MEditor-macos-arm64.dmg",
+                          "sha256": read_sha256("MEditor-macos-arm64.dmg"),
+                      },
+                  },
+                  "windows-x64": {
+                      "archive": {
+                          "filename": "MEditor-windows-x64.7z",
+                          "url": f"{base_url}/MEditor-windows-x64.7z",
+                          "sha256": read_sha256("MEditor-windows-x64.7z"),
+                      },
+                      "installer": {
+                          "filename": "MEditor-windows-x64-setup.exe",
+                          "url": f"{base_url}/MEditor-windows-x64-setup.exe",
+                          "sha256": read_sha256("MEditor-windows-x64-setup.exe"),
+                          "silentArgs": ["/S"],
+                      },
+                  },
+                  "linux-x64": {
+                      "appimage": {
+                          "filename": "MEditor-linux-x86_64.AppImage",
+                          "url": f"{base_url}/MEditor-linux-x86_64.AppImage",
+                          "sha256": read_sha256("MEditor-linux-x86_64.AppImage"),
+                      },
+                  },
+              },
+          }
+          (assets_dir / "latest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+          PY
+
+      - name: Publicar no GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
+          generate_release_notes: true
+          body: |
+            ## MEditor ${{ env.MEDITOR_VERSION }}
+            Editor de vídeo para os alunos do curso **Edição no Ponto**, baseado no **Kdenlive (KDE)** sob licença **GPL-3.0**.
+
+            - Inclui código-fonte correspondente completo (`meditor-${{ env.MEDITOR_VERSION }}-source-gpl3.tar.gz`) e manifesto de oferta de fontes das bibliotecas (`GPL-3.0-SOURCE-OFFER.txt`).
+            - Manifesto de atualização silenciosa pelo kit: `latest.json`.

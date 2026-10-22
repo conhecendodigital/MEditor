@@ -277,17 +277,40 @@ int main(int argc, char *argv[])
         break;
     }
     if (!packageName.isEmpty()) {
-        KConfig::setMainConfigName(QStringLiteral("kdenlive-%1rc").arg(packageName));
+        KConfig::setMainConfigName(QStringLiteral("meditor-%1rc").arg(packageName));
+    } else {
+        KConfig::setMainConfigName(QStringLiteral("meditorrc"));
     }
 
     KLocalizedString::setApplicationDomain("kdenlive");
+    {
+        // MEditor: define pt_BR como idioma padrão se nenhum idioma estiver configurado
+        const QString languageOverrideFile =
+            QStandardPaths::locate(QStandardPaths::GenericConfigLocation, QStringLiteral("klanguageoverridesrc"));
+        bool hasExplicitLanguage = !qEnvironmentVariableIsEmpty("LANGUAGE") || !qEnvironmentVariableIsEmpty("MEDITOR_LANG");
+        if (!hasExplicitLanguage && !languageOverrideFile.isEmpty()) {
+            KConfig langCfg(languageOverrideFile, KConfig::SimpleConfig);
+            KConfigGroup grp(&langCfg, QStringLiteral("Language"));
+            hasExplicitLanguage = !grp.readEntry(qAppName(), QString()).isEmpty()
+                               || !grp.readEntry(QStringLiteral("kdenlive"), QString()).isEmpty()
+                               || !grp.readEntry(QStringLiteral("meditor"), QString()).isEmpty();
+        }
+        if (!hasExplicitLanguage) {
+            qputenv("LANGUAGE", "pt_BR:pt");
+            KLocalizedString::setLanguages({QStringLiteral("pt_BR"), QStringLiteral("pt")});
+        }
+    }
 
-    // Create KAboutData
-    QString otherText = i18n("Please report bugs to <a href=\"%1\">%2</a>", QStringLiteral("https://bugs.kde.org/enter_bug.cgi?product=kdenlive"),
+    // Create KAboutData (MEditor — baseado no Kdenlive, preservando créditos originais do KDE/Kdenlive)
+    QString otherText = i18n("Baseado no Kdenlive (GPL-3.0), projeto oficial da comunidade KDE (<a href=\"%1\">%1</a>).<br/>"
+                             "Relatório de bugs do projeto base: <a href=\"%2\">%3</a>",
+                             QStringLiteral("https://kdenlive.org"),
+                             QStringLiteral("https://bugs.kde.org/enter_bug.cgi?product=kdenlive"),
                              QStringLiteral("https://bugs.kde.org/"));
 
-    KAboutData aboutData(QByteArray("kdenlive"), i18n("Kdenlive"), KDENLIVE_VERSION, i18n("An open source video editor."), KAboutLicense::GPL_V3,
-                         i18n("Copyright © 2007–2025 Kdenlive authors"), otherText, QStringLiteral("https://kdenlive.org"));
+    KAboutData aboutData(QByteArray("kdenlive"), i18n("MEditor"), KDENLIVE_VERSION,
+                         i18n("Editor de vídeo Edição no Ponto — baseado no Kdenlive (GPL-3.0)."), KAboutLicense::GPL_V3,
+                         i18n("Copyright © 2007–2025 Kdenlive authors"), otherText, QStringLiteral("https://edicaonoponto.com.br"));
     // main developers (alphabetical)
     aboutData.addAuthor(i18n("Jean-Baptiste Mardelle"), i18n("Core team member, main developer and maintainer, MLT, and KDE SC 4 / KF5 port"), QStringLiteral("jb@kdenlive.org"));
     // active developers with major involvement
@@ -311,16 +334,18 @@ int main(int argc, char *argv[])
     aboutData.addCredit(i18n("Massimo Stella"), i18n("Core team member, expert advice, testing"));
 
     aboutData.setTranslator(i18n("NAME OF TRANSLATORS"), i18n("EMAIL OF TRANSLATORS"));
-    aboutData.setOrganizationDomain(QByteArray("kde.org"));
+    aboutData.setOrganizationDomain(QByteArray("edicaonoponto.com.br"));
 
-    aboutData.addComponent(aboutData.displayName(), QString(), KDENLIVE_FULL_VERSION_STRING, aboutData.homepage());
+    aboutData.addComponent(aboutData.displayName(), i18n("Baseado no Kdenlive (GPL-3.0)"), KDENLIVE_FULL_VERSION_STRING, aboutData.homepage());
+    aboutData.addComponent(QStringLiteral("Kdenlive (upstream)"), i18n("Projeto base oficial da comunidade KDE (GPL-3.0)."),
+                           KDENLIVE_FULL_VERSION_STRING, QStringLiteral("https://kdenlive.org"));
 
     aboutData.addComponent(i18n("MLT"), i18n("Open source multimedia framework."), mlt_version_get_string(),
                            QStringLiteral("https://mltframework.org") /*, KAboutLicense::LGPL_V2_1*/);
     aboutData.addComponent(i18n("FFmpeg"), i18n("A complete, cross-platform solution to record, convert and stream audio and video."),
                            QString::fromLocal8Bit(av_version_info()), QStringLiteral("https://ffmpeg.org"));
 
-    aboutData.setDesktopFileName(QStringLiteral("org.kde.kdenlive"));
+    aboutData.setDesktopFileName(QStringLiteral("br.com.edicaonoponto.meditor"));
 
     // Set application data
     KAboutData::setApplicationData(aboutData);
@@ -359,6 +384,9 @@ int main(int argc, char *argv[])
     QCommandLineOption disableWelcome(QStringLiteral("no-welcome"), i18n("Do not show any welcome screen."));
     parser.addOption(disableWelcome);
 
+    QCommandLineOption apiOption(QStringLiteral("api"), i18n("Enable the MEditor local JSON-RPC API server."));
+    parser.addOption(apiOption);
+
     QCommandLineOption debugOption(QStringLiteral("debug"), i18n("Show some development specific features in the UI, disable all exclude lists for assets."));
     parser.addOption(debugOption);
 
@@ -374,6 +402,9 @@ int main(int argc, char *argv[])
     // Parse command line
     parser.process(app);
     aboutData.processCommandLine(&parser);
+    if (parser.isSet(apiOption)) {
+        KdenliveSettings::setMeditor_api_enabled(true);
+    }
 
     if (parser.isSet(saveDebugOption)) {
         const QString outputFilename = parser.value(saveDebugOption);

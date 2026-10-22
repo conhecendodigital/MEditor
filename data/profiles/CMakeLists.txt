@@ -17,4 +17,6 @@ hd_ready_768p_50
 hd_ready_768p_5994
 hd_ready_768p_60
 vertical_1080p_25
+atsc_1080p_60_vertical
+vertical_1440p_60
 DESTINATION ${KDE_INSTALL_DATADIR}${DATA_INSTALL_PREFIX}/profiles)

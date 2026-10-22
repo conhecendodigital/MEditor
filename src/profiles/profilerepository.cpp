@@ -93,6 +93,12 @@ void ProfileRepository::refresh()
                 continue;
             }
             mltBySpec.erase(make_spec(profile));
+            if (m_profiles.count(file) == 0) {
+                std::unique_ptr<ProfileModel> shortKeyProfile(new ProfileModel(fullPath));
+                if (shortKeyProfile->is_valid()) {
+                    m_profiles.insert(std::make_pair(file, std::move(shortKeyProfile)));
+                }
+            }
             m_profiles.insert(std::make_pair(fullPath, std::move(profile)));
         }
     }

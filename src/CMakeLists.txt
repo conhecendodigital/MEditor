@@ -67,6 +67,7 @@ add_subdirectory(utils)
 add_subdirectory(widgets)
 add_subdirectory(xml)
 add_subdirectory(layouts)
+add_subdirectory(meditor)
 
 ## toplevel source code files
 list(APPEND kdenlive_SRCS
@@ -90,9 +91,9 @@ endif()
 ecm_qt_declare_logging_category(kdenlive_SRCS
     HEADER kdenlive_debug.h
     IDENTIFIER KDENLIVE_LOG
-    CATEGORY_NAME org.kde.kdenlive
-    OLD_CATEGORY_NAMES org.kde.multimedia.kdenlive
-    DESCRIPTION "Kdenlive"
+    CATEGORY_NAME br.com.edicaonoponto.meditor
+    OLD_CATEGORY_NAMES org.kde.kdenlive org.kde.multimedia.kdenlive
+    DESCRIPTION "MEditor"
     EXPORT KDENLIVE
 )
 
@@ -231,13 +232,13 @@ if (APPLE)
 # Apple app package
 set_target_properties(kdenlive PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/../data/Info.plist)
 set_target_properties(kdenlive PROPERTIES
-    MACOSX_BUNDLE_DISPLAY_NAME "Kdenlive"
-    MACOSX_BUNDLE_BUNDLE_NAME "Kdenlive"
-    MACOSX_BUNDLE_LONG_VERSION_STRING "Kdenlive ${KDENLIVE_VERSION}"
+    MACOSX_BUNDLE_DISPLAY_NAME "MEditor"
+    MACOSX_BUNDLE_BUNDLE_NAME "MEditor"
+    MACOSX_BUNDLE_LONG_VERSION_STRING "MEditor ${KDENLIVE_VERSION}"
     MACOSX_BUNDLE_SHORT_VERSION_STRING "${RELEASE_SERVICE_VERSION_MAJOR}.${RELEASE_SERVICE_VERSION_MINOR}"
     MACOSX_BUNDLE_BUNDLE_VERSION "${KDENLIVE_VERSION}"
-    MACOSX_BUNDLE_GUI_IDENTIFIER "org.kde.Kdenlive"
-    MACOSX_BUNDLE_COPYRIGHT "2000-2022 The Kdenlive Authors")
+    MACOSX_BUNDLE_GUI_IDENTIFIER "br.com.edicaonoponto.meditor"
+    MACOSX_BUNDLE_COPYRIGHT "2000-2026 The Kdenlive Authors / Edição no Ponto")
 #set_target_properties(kdenlive PROPERTIES MACOSX_BUNDLE ON)
 endif()
 
