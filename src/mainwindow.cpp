@@ -3295,17 +3295,28 @@ void MainWindow::focusSubtitlesDock()
 
 void MainWindow::applyOpenCutWorkspaceLayout()
 {
+    // Exact OpenCut / CapCut Zinc-950 dark theme (#09090B / #121215 / #18181B / #27272A)
     setStyleSheet(QStringLiteral(
-        "QMainWindow, QWidget { background-color: #0E1117; color: #E5E7EB; }"
-        "QToolBar { background-color: #131722; border-bottom: 1px solid #1F2937; spacing: 4px; padding: 3px; }"
-        "QMenuBar { background-color: #0B0D13; color: #E5E7EB; border-bottom: 1px solid #1F2937; }"
-        "QTabBar::tab { background-color: #131722; color: #9CA3AF; padding: 6px 12px; border-top-left-radius: 6px; border-top-right-radius: 6px; margin-right: 2px; font-weight: 600; }"
-        "QTabBar::tab:selected { background-color: #1F2937; color: #FFFFFF; border-bottom: 2px solid #3B82F6; }"
-        "QPushButton, QToolButton { background-color: #1C2230; color: #F3F4F6; border: 1px solid #2D3748; border-radius: 6px; padding: 4px 8px; }"
-        "QPushButton:hover, QToolButton:hover { background-color: #2563EB; border-color: #3B82F6; color: #FFFFFF; }"
-        "QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit, QTextEdit, QPlainTextEdit { background-color: #161B26; color: #F9FAFB; border: 1px solid #2D3748; border-radius: 6px; padding: 3px 6px; }"
-        "QStatusBar { background-color: #0B0D13; color: #9CA3AF; border-top: 1px solid #1F2937; }"
+        "QMainWindow, QWidget { background-color: #09090B; color: #F4F4F5; font-family: -apple-system, 'SF Pro Text', 'Inter', sans-serif; }"
+        "QToolBar { background-color: #121215; border: none; border-bottom: 1px solid #27272A; spacing: 6px; padding: 4px 8px; }"
+        "QMenuBar { background-color: #09090B; color: #E4E4E7; border-bottom: 1px solid #27272A; }"
+        "QTabBar::tab { background-color: #121215; color: #A1A1AA; padding: 6px 14px; border-top-left-radius: 7px; border-top-right-radius: 7px; margin-right: 3px; font-weight: 600; font-size: 12px; border: 1px solid #27272A; border-bottom: none; }"
+        "QTabBar::tab:selected { background-color: #18181B; color: #FFFFFF; border-bottom: 2px solid #38BDF8; }"
+        "QPushButton, QToolButton { background-color: #18181B; color: #F4F4F5; border: 1px solid #27272A; border-radius: 7px; padding: 5px 10px; font-weight: 500; }"
+        "QPushButton:hover, QToolButton:hover { background-color: #27272A; border-color: #38BDF8; color: #FFFFFF; }"
+        "QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit, QTextEdit, QPlainTextEdit { background-color: #121215; color: #FAFAFA; border: 1px solid #27272A; border-radius: 7px; padding: 4px 8px; selection-background-color: #0284C7; }"
+        "QScrollBar:vertical, QScrollBar:horizontal { background: #09090B; border: none; width: 8px; height: 8px; }"
+        "QScrollBar::handle:vertical, QScrollBar::handle:horizontal { background: #27272A; border-radius: 4px; min-height: 20px; min-width: 20px; }"
+        "QStatusBar { background-color: #09090B; color: #71717A; border-top: 1px solid #27272A; }"
     ));
+
+    if (QScreen *scr = QApplication::primaryScreen()) {
+        const QRect avail = scr->availableGeometry();
+        if (width() < 1280 || height() < 780) {
+            resize(qRound(avail.width() * 0.94), qRound(avail.height() * 0.92));
+            move(avail.x() + (avail.width() - width()) / 2, avail.y() + (avail.height() - height()) / 2);
+        }
+    }
 
     if (m_clipMonitorDock) {
         m_clipMonitorDock->close();
@@ -3325,31 +3336,35 @@ void MainWindow::applyOpenCutWorkspaceLayout()
     if (m_onlineResourcesDock) {
         m_onlineResourcesDock->close();
     }
+
+    // OpenCut 3-Column Top (Left: Assets | Center: 9:16 Preview | Right: Legendas & Inspector) + Bottom: Timeline
+    const int winW = qMax(1280, width());
+    const int winH = qMax(800, height());
+    if (m_timelineDock) {
+        m_timelineDock->setTitle(QStringLiteral("Timeline"));
+        m_timelineDock->open();
+    }
     if (m_projectBinDock) {
-        m_projectBinDock->setTitle(QStringLiteral("Mídia & Cortes"));
+        m_projectBinDock->setTitle(QStringLiteral("Assets"));
+        mainDockWindow->addDockWidget(m_projectBinDock, KDDockWidgets::Location_OnTop, m_timelineDock, QSize(qRound(winW * 0.22), qRound(winH * 0.56)));
         m_projectBinDock->open();
-        if (m_subtitlesDock) {
-            m_projectBinDock->addDockWidgetAsTab(m_subtitlesDock);
-            m_subtitlesDock->open();
-        }
-        if (m_effectStackDock) {
-            m_effectStackDock->setTitle(QStringLiteral("Propriedades"));
-            m_projectBinDock->addDockWidgetAsTab(m_effectStackDock);
-        }
-        if (m_subtitlesDock) {
-            m_subtitlesDock->setAsCurrentTab();
-        } else {
-            m_projectBinDock->setAsCurrentTab();
-        }
+        m_projectBinDock->setAsCurrentTab();
     }
     if (m_projectMonitorDock) {
-        m_projectMonitorDock->setTitle(QStringLiteral("Preview Interativo (OpenCut / CapCut)"));
+        m_projectMonitorDock->setTitle(QStringLiteral("Preview"));
+        mainDockWindow->addDockWidget(m_projectMonitorDock, KDDockWidgets::Location_OnRight, m_projectBinDock, QSize(qRound(winW * 0.50), qRound(winH * 0.56)));
         m_projectMonitorDock->open();
         m_projectMonitorDock->setAsCurrentTab();
     }
-    if (m_timelineDock) {
-        m_timelineDock->setTitle(QStringLiteral("Timeline Magnética"));
-        m_timelineDock->open();
+    if (m_subtitlesDock && m_projectMonitorDock) {
+        m_subtitlesDock->setTitle(QStringLiteral("Legendas & Estilos"));
+        mainDockWindow->addDockWidget(m_subtitlesDock, KDDockWidgets::Location_OnRight, m_projectMonitorDock, QSize(qRound(winW * 0.28), qRound(winH * 0.56)));
+        m_subtitlesDock->open();
+        if (m_effectStackDock) {
+            m_effectStackDock->setTitle(QStringLiteral("Propriedades"));
+            m_subtitlesDock->addDockWidgetAsTab(m_effectStackDock);
+        }
+        m_subtitlesDock->setAsCurrentTab();
     }
 }
 

@@ -39,7 +39,7 @@ Item {
     property bool isClipMonitor: false
     property var canvasState: ({})
     property string inlineEditMode: "" // "", "title", "subtitle"
-    property bool showCanvasGuides: true
+    property bool showCanvasGuides: false
 
     function refreshCanvasState() {
         if (!root.isClipMonitor && root.controller) {
@@ -168,7 +168,7 @@ Item {
             Item {
                 id: openCutCanvasOverlay
                 anchors.fill: frame
-                visible: !root.isClipMonitor && root.showCanvasGuides
+                visible: !root.isClipMonitor
 
                 // 1. Top Zone: Full-Video Title (V3)
                 Rectangle {
@@ -178,9 +178,9 @@ Item {
                     width: frame.width * 0.92
                     height: frame.height * 0.15
                     radius: 8
-                    color: (titleZoneMouse.containsMouse || root.canvasState.selectedZone === "title") ? "#282563EB" : "transparent"
-                    border.width: (titleZoneMouse.containsMouse || root.canvasState.selectedZone === "title") ? 2 : 1
-                    border.color: (titleZoneMouse.containsMouse || root.canvasState.selectedZone === "title") ? "#60A5FA" : "#443B82F6"
+                    color: (titleZoneMouse.containsMouse || root.canvasState.selectedZone === "title") ? "#2238BDF8" : "transparent"
+                    border.width: (titleZoneMouse.containsMouse || root.canvasState.selectedZone === "title") ? 2 : (root.showCanvasGuides ? 1 : 0)
+                    border.color: (titleZoneMouse.containsMouse || root.canvasState.selectedZone === "title") ? "#38BDF8" : "#4438BDF8"
 
                     Rectangle {
                         anchors.top: parent.top
@@ -189,8 +189,10 @@ Item {
                         height: 20
                         width: titleBadgeText.implicitWidth + 14
                         radius: 5
-                        color: "#CC1D4ED8"
-                        visible: titleZoneMouse.containsMouse || root.canvasState.selectedZone === "title" || root.canvasState.hasTitle
+                        color: "#DD18181B"
+                        border.color: "#38BDF8"
+                        border.width: 1
+                        visible: titleZoneMouse.containsMouse || root.canvasState.selectedZone === "title" || root.showCanvasGuides
                         Text {
                             id: titleBadgeText
                             anchors.centerIn: parent
@@ -223,8 +225,8 @@ Item {
                     width: frame.width * 0.92
                     height: frame.height * 0.24
                     radius: 8
-                    color: (motionZoneMouse.containsMouse || root.canvasState.selectedZone === "motion") ? "#247C3AED" : "transparent"
-                    border.width: (motionZoneMouse.containsMouse || root.canvasState.selectedZone === "motion") ? 2 : (root.canvasState.hasMotion ? 1 : 0)
+                    color: (motionZoneMouse.containsMouse || root.canvasState.selectedZone === "motion") ? "#22A78BFA" : "transparent"
+                    border.width: (motionZoneMouse.containsMouse || root.canvasState.selectedZone === "motion") ? 2 : (root.showCanvasGuides ? 1 : 0)
                     border.color: (motionZoneMouse.containsMouse || root.canvasState.selectedZone === "motion") ? "#A78BFA" : "#558B5CF6"
 
                     Rectangle {
@@ -234,8 +236,10 @@ Item {
                         height: 20
                         width: motionBadgeText.implicitWidth + 14
                         radius: 5
-                        color: "#CC6D28D9"
-                        visible: motionZoneMouse.containsMouse || root.canvasState.selectedZone === "motion" || root.canvasState.hasMotion
+                        color: "#DD18181B"
+                        border.color: "#A78BFA"
+                        border.width: 1
+                        visible: motionZoneMouse.containsMouse || root.canvasState.selectedZone === "motion" || root.showCanvasGuides
                         Text {
                             id: motionBadgeText
                             anchors.centerIn: parent
@@ -265,8 +269,8 @@ Item {
                     width: frame.width * 0.92
                     height: frame.height * 0.38
                     radius: 8
-                    color: (cameraZoneMouse.containsMouse || root.canvasState.selectedZone === "camera") ? "#1A10B981" : "transparent"
-                    border.width: (cameraZoneMouse.containsMouse || root.canvasState.selectedZone === "camera") ? 2 : 1
+                    color: (cameraZoneMouse.containsMouse || root.canvasState.selectedZone === "camera") ? "#1A34D399" : "transparent"
+                    border.width: (cameraZoneMouse.containsMouse || root.canvasState.selectedZone === "camera") ? 2 : (root.showCanvasGuides ? 1 : 0)
                     border.color: (cameraZoneMouse.containsMouse || root.canvasState.selectedZone === "camera") ? "#34D399" : "#3310B981"
 
                     Rectangle {
@@ -276,8 +280,10 @@ Item {
                         height: 22
                         width: cameraBadgeText.implicitWidth + 16
                         radius: 6
-                        color: "#CC047857"
-                        visible: cameraZoneMouse.containsMouse || root.canvasState.selectedZone === "camera" || root.canvasState.hasCamera
+                        color: "#DD18181B"
+                        border.color: "#34D399"
+                        border.width: 1
+                        visible: cameraZoneMouse.containsMouse || root.canvasState.selectedZone === "camera" || root.showCanvasGuides
                         Text {
                             id: cameraBadgeText
                             anchors.centerIn: parent
@@ -309,9 +315,9 @@ Item {
                     height: Math.max(42, frame.height * 0.11)
                     y: Math.max(frame.height * 0.12, Math.min(frame.height * 0.85, (root.canvasState.subNormY !== undefined ? root.canvasState.subNormY : 0.515) * frame.height - height / 2))
                     radius: 8
-                    color: (subZoneMouse.containsMouse || subZoneMouse.pressed || root.canvasState.selectedZone === "subtitle") ? "#33F59E0B" : "transparent"
-                    border.width: (subZoneMouse.containsMouse || subZoneMouse.pressed || root.canvasState.selectedZone === "subtitle") ? 2 : 1
-                    border.color: (subZoneMouse.containsMouse || subZoneMouse.pressed || root.canvasState.selectedZone === "subtitle") ? "#FBBF24" : "#66F59E0B"
+                    color: (subZoneMouse.containsMouse || subZoneMouse.pressed || root.canvasState.selectedZone === "subtitle") ? "#2434D399" : "transparent"
+                    border.width: (subZoneMouse.containsMouse || subZoneMouse.pressed || root.canvasState.selectedZone === "subtitle") ? 2 : (root.showCanvasGuides ? 1 : 0)
+                    border.color: (subZoneMouse.containsMouse || subZoneMouse.pressed || root.canvasState.selectedZone === "subtitle") ? "#34D399" : "#6634D399"
 
                     Rectangle {
                         anchors.top: parent.top
@@ -320,8 +326,10 @@ Item {
                         height: 20
                         width: subBadgeText.implicitWidth + 14
                         radius: 5
-                        color: "#CCD97706"
-                        visible: subZoneMouse.containsMouse || subZoneMouse.pressed || root.canvasState.selectedZone === "subtitle" || root.canvasState.hasSubtitle
+                        color: "#DD18181B"
+                        border.color: "#34D399"
+                        border.width: 1
+                        visible: subZoneMouse.containsMouse || subZoneMouse.pressed || root.canvasState.selectedZone === "subtitle" || root.showCanvasGuides
                         Text {
                             id: subBadgeText
                             anchors.centerIn: parent

@@ -280,9 +280,9 @@ Item {
             horizontalAlignment: displayText == text ? TextInput.AlignHCenter : TextInput.AlignLeft
             background: Rectangle {
                 radius: 6
-                color: subtitleRoot.timeline.subtitlesLocked ? "#EF4444" : (enabled ? "#FEF3C7" : (subtitleRoot.selected ? "#B45309" : "#D97706"))
+                color: subtitleRoot.timeline.subtitlesLocked ? "#EF4444" : (enabled ? "#FFFFFF" : (subtitleRoot.selected ? "#10B981" : "#34D399"))
                 border {
-                    color: subtitleRoot.selected ? "#FDE047" : "#78350F"
+                    color: subtitleRoot.selected ? "#FFFFFF" : "#059669"
                     width: subtitleRoot.isGrabbed ? 6 : (subtitleRoot.selected ? 2 : 1)
                 }
                 Rectangle {
@@ -306,7 +306,7 @@ Item {
                     visible: subtitleRoot.selected && parent.width > 22
                 }
             }
-            color: enabled ? '#111827' : '#FFFFFF'
+            color: '#09090B'
             padding: 2
         }
     }
