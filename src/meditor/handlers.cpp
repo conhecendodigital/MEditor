@@ -868,24 +868,156 @@ bool Handlers::handleClipResize(const QJsonObject &params, QJsonObject &outResul
         return false;
     }
 
-    const int clipId = params.value(QStringLiteral("clipId")).toInt(params.value(QStringLiteral("id")).toInt(-1));
+    const double fps = activeFps();
+    int clipId = params.value(QStringLiteral("clipId")).toInt(params.value(QStringLiteral("id")).toInt(-1));
+    if (clipId < 0 || !timeline->isClip(clipId)) {
+        // Permite localizar o corte pelo número (`corte`: 1..N) ou `keepIndex` (0..N-1) na trilha V1
+        int wantedKeepIndex = params.value(QStringLiteral("keepIndex")).toInt(-1);
+        if (wantedKeepIndex < 0 && params.contains(QStringLiteral("corte"))) {
+            wantedKeepIndex = qMax(0, params.value(QStringLiteral("corte")).toInt(1) - 1);
+        }
+        if (wantedKeepIndex >= 0) {
+            const int v1TrackId = JsonSerialize::resolveTrackId(timeline, QJsonValue(QStringLiteral("V1")));
+            if (v1TrackId >= 0) {
+                QVector<QPair<int, int>> v1Clips; // (pos, clipId)
+                for (int cid : timeline->getItemsInRange(v1TrackId, 0, -1, false)) {
+                    if (timeline->isClip(cid)) {
+                        v1Clips.append(qMakePair(timeline->getClipPosition(cid), cid));
+                    }
+                }
+                std::sort(v1Clips.begin(), v1Clips.end(),
+                          [](const QPair<int, int> &a, const QPair<int, int> &b) { return a.first < b.first; });
+                if (wantedKeepIndex < v1Clips.size()) {
+                    clipId = v1Clips.at(wantedKeepIndex).second;
+                }
+            }
+        }
+    }
     if (clipId < 0 || !timeline->isClip(clipId)) {
         outError = QStringLiteral("Invalid or unknown clipId: %1").arg(clipId);
         return false;
     }
 
-    const double fps = activeFps();
     const std::pair<int, int> currentInOut = timeline->getClipInOut(clipId);
     const int currentPlaytime = timeline->getClipPlaytime(clipId);
+    const bool explicitRipple = params.value(QStringLiteral("ripple")).toBool(false);
 
     Fun localUndo = []() { return true; };
     Fun localRedo = []() { return true; };
 
+    // Helper: redimensiona o clipe (e seu parceiro de áudio AVSplit) abrindo ou fechando espaço (Ripple)
+    // automaticamente quando estica (`deltaSize > 0`) ou quando `ripple: true` é passado.
+    auto resizeWithOptionalRipple = [&](int targetClipId, int targetSize, bool rightEdge, QString &errOut) -> bool {
+        const int curSize = timeline->getClipPlaytime(targetClipId);
+        const int deltaSize = targetSize - curSize;
+        if (deltaSize == 0) {
+            return true;
+        }
+        const int vTrackId = timeline->getClipTrackId(targetClipId);
+        const int partnerId = timeline->getClipSplitPartner(targetClipId);
+        const int aTrackId = (partnerId >= 0 && timeline->isClip(partnerId)) ? timeline->getClipTrackId(partnerId) : -1;
+        const int clipPos = timeline->getClipPosition(targetClipId);
+        const int clipEnd = clipPos + curSize;
+
+        // Se estamos esticando (deltaSize > 0), verificamos se precisamos empurrar os clipes seguintes (Ripple)
+        if (deltaSize > 0) {
+            const int pivotPos = rightEdge ? clipEnd : clipPos;
+            auto shiftTrackRight = [&](int tId) -> bool {
+                if (tId < 0) return true;
+                QVector<QPair<int, int>> toShift;
+                for (int cid : timeline->getItemsInRange(tId, pivotPos, -1, false)) {
+                    if (!timeline->isClip(cid)) continue;
+                    if (rightEdge && (cid == targetClipId || cid == partnerId)) continue;
+                    const int p = timeline->getClipPosition(cid);
+                    if (p >= pivotPos) {
+                        toShift.append(qMakePair(p, cid));
+                    }
+                }
+                // Move da direita para a esquerda para nunca colidir
+                std::sort(toShift.begin(), toShift.end(),
+                          [](const QPair<int, int> &a, const QPair<int, int> &b) { return a.first > b.first; });
+                for (const auto &item : toShift) {
+                    const int cid = item.second;
+                    const int curP = timeline->getClipPosition(cid);
+                    if (curP == item.first) {
+                        timeline->requestClipMove(cid, tId, curP + deltaSize, /*moveMirrorTracks=*/false,
+                                                  /*updateView=*/true, /*invalidateTimeline=*/true,
+                                                  /*finalMove=*/true, localUndo, localRedo);
+                    }
+                }
+                return true;
+            };
+            shiftTrackRight(vTrackId);
+            shiftTrackRight(aTrackId);
+        }
+
+        int sizeMain = targetSize;
+        if (!timeline->requestItemResize(targetClipId, sizeMain, rightEdge, /*logUndo=*/false, localUndo, localRedo,
+                                         /*blockUndo=*/false)) {
+            errOut = QStringLiteral("requestItemResize failed for clipId=%1 (targetSize=%2, right=%3)")
+                         .arg(targetClipId)
+                         .arg(targetSize)
+                         .arg(rightEdge);
+            return false;
+        }
+        if (partnerId >= 0 && timeline->isClip(partnerId) && timeline->getClipPlaytime(partnerId) != sizeMain) {
+            int sizePartner = sizeMain;
+            timeline->requestItemResize(partnerId, sizePartner, rightEdge, /*logUndo=*/false, localUndo, localRedo,
+                                        /*blockUndo=*/false);
+        }
+
+        // Se encurtou (deltaSize < 0) e `ripple: true`, puxa os clipes seguintes para fechar o buraco magneticamente
+        if (deltaSize < 0 && explicitRipple) {
+            const int pivotPos = rightEdge ? (clipPos + sizeMain) : clipPos;
+            auto shiftTrackLeft = [&](int tId) -> bool {
+                if (tId < 0) return true;
+                QVector<QPair<int, int>> toShift;
+                for (int cid : timeline->getItemsInRange(tId, pivotPos, -1, false)) {
+                    if (!timeline->isClip(cid)) continue;
+                    if (rightEdge && (cid == targetClipId || cid == partnerId)) continue;
+                    const int p = timeline->getClipPosition(cid);
+                    if (p >= pivotPos) {
+                        toShift.append(qMakePair(p, cid));
+                    }
+                }
+                // Move da esquerda para a direita para ocupar o espaço recém-aberto
+                std::sort(toShift.begin(), toShift.end(),
+                          [](const QPair<int, int> &a, const QPair<int, int> &b) { return a.first < b.first; });
+                for (const auto &item : toShift) {
+                    const int cid = item.second;
+                    const int curP = timeline->getClipPosition(cid);
+                    if (curP == item.first) {
+                        timeline->requestClipMove(cid, tId, qMax(0, curP + deltaSize), /*moveMirrorTracks=*/false,
+                                                  /*updateView=*/true, /*invalidateTimeline=*/true,
+                                                  /*finalMove=*/true, localUndo, localRedo);
+                    }
+                }
+                return true;
+            };
+            shiftTrackLeft(vTrackId);
+            shiftTrackLeft(aTrackId);
+        }
+        return true;
+    };
+
     bool resizedAny = false;
 
-    // Modo 1: `in` e/ou `out` explícitos
-    const int requestedIn = parseFrameParam(params, QStringLiteral("in"), QStringLiteral("inSeconds"), fps, -1);
-    const int requestedOut = parseFrameParam(params, QStringLiteral("out"), QStringLiteral("outSeconds"), fps, -1);
+    // Suporte a `addStartSeconds` / `addEndSeconds` / `deltaInFrames` / `deltaOutFrames` (esticar/encurtar frase)
+    int requestedIn = parseFrameParam(params, QStringLiteral("in"), QStringLiteral("inSeconds"), fps, -1);
+    int requestedOut = parseFrameParam(params, QStringLiteral("out"), QStringLiteral("outSeconds"), fps, -1);
+
+    if (params.contains(QStringLiteral("addStartSeconds")) || params.contains(QStringLiteral("addStartFrames"))) {
+        const int addStartFrames = params.contains(QStringLiteral("addStartFrames"))
+                                       ? params.value(QStringLiteral("addStartFrames")).toInt(0)
+                                       : qRound(params.value(QStringLiteral("addStartSeconds")).toDouble(0.0) * fps);
+        requestedIn = qMax(0, currentInOut.first - addStartFrames);
+    }
+    if (params.contains(QStringLiteral("addEndSeconds")) || params.contains(QStringLiteral("addEndFrames"))) {
+        const int addEndFrames = params.contains(QStringLiteral("addEndFrames"))
+                                     ? params.value(QStringLiteral("addEndFrames")).toInt(0)
+                                     : qRound(params.value(QStringLiteral("addEndSeconds")).toDouble(0.0) * fps);
+        requestedOut = qMax(0, currentInOut.second + addEndFrames);
+    }
 
     if (requestedIn >= 0 || requestedOut >= 0) {
         if (requestedIn >= 0 && requestedIn != currentInOut.first) {
@@ -897,9 +1029,7 @@ bool Handlers::handleClipResize(const QJsonObject &params, QJsonObject &outResul
                                .arg(targetSize);
                 return false;
             }
-            if (!timeline->requestItemResize(clipId, targetSize, /*right=*/false, /*logUndo=*/false, localUndo,
-                                             localRedo, /*blockUndo=*/false)) {
-                outError = QStringLiteral("requestItemResize (left/in) failed for clipId=%1").arg(clipId);
+            if (!resizeWithOptionalRipple(clipId, targetSize, /*rightEdge=*/false, outError)) {
                 return false;
             }
             resizedAny = true;
@@ -916,9 +1046,7 @@ bool Handlers::handleClipResize(const QJsonObject &params, QJsonObject &outResul
                                    .arg(targetSize);
                     return false;
                 }
-                if (!timeline->requestItemResize(clipId, targetSize, /*right=*/true, /*logUndo=*/false, localUndo,
-                                                 localRedo, /*blockUndo=*/false)) {
-                    outError = QStringLiteral("requestItemResize (right/out) failed for clipId=%1").arg(clipId);
+                if (!resizeWithOptionalRipple(clipId, targetSize, /*rightEdge=*/true, outError)) {
                     return false;
                 }
                 resizedAny = true;
@@ -948,12 +1076,7 @@ bool Handlers::handleClipResize(const QJsonObject &params, QJsonObject &outResul
             }
         }
 
-        if (!timeline->requestItemResize(clipId, targetSize, rightEdge, /*logUndo=*/false, localUndo, localRedo,
-                                         /*blockUndo=*/false)) {
-            outError = QStringLiteral("TimelineModel::requestItemResize failed for clipId=%1 (size=%2, right=%3)")
-                           .arg(clipId)
-                           .arg(targetSize)
-                           .arg(rightEdge);
+        if (!resizeWithOptionalRipple(clipId, targetSize, rightEdge, outError)) {
             return false;
         }
         resizedAny = true;

@@ -101,7 +101,8 @@ Item {
             return
         }
         var new_duration = 0;
-        if (K.Core.activeTool === K.ToolType.RippleTool) {
+        let useRipple = K.Core.activeTool === K.ToolType.RippleTool || (K.Core.activeTool === K.ToolType.SelectTool && !controlTrim && !shiftTrim && clip.mixDuration <= 0);
+        if (useRipple) {
             console.log("Trimming request for " + newDuration + " right: " + right)
             new_duration = trackRoot.timeline.requestItemRippleResize(clip.clipId, newDuration, right, false, trackRoot.snapping, shiftTrim)
             trackRoot.timeline.requestStartTrimmingMode(clip.clipId, false, right);
@@ -139,9 +140,10 @@ Item {
     function trimedClip(clip, shiftTrim, controlTrim, right) {
         //bubbleHelp.hide()
         trackRoot.timeline.showToolTip();
-        if (shiftTrim || (trackRoot.groupTrimData == undefined/*TODO > */ || K.Core.activeTool === K.ToolType.RippleTool /* < TODO*/) || controlTrim) {
+        let useRipple = K.Core.activeTool === K.ToolType.RippleTool || (K.Core.activeTool === K.ToolType.SelectTool && !controlTrim && !shiftTrim && clip.mixDuration <= 0);
+        if (shiftTrim || (trackRoot.groupTrimData == undefined/*TODO > */ || useRipple /* < TODO*/) || controlTrim) {
             // We only resize one element
-            if (K.Core.activeTool === K.ToolType.RippleTool) {
+            if (useRipple) {
                 trackRoot.timeline.requestItemRippleResize(clip.clipId, clip.originalDuration, right, false, 0, shiftTrim)
             } else {
                 trackRoot.controller.requestItemResize(clip.clipId, clip.originalDuration, right, false, 0, shiftTrim)
@@ -153,7 +155,7 @@ Item {
                 trackRoot.controller.requestClipResizeAndTimeWarp(clip.clipId, speedController.lastValidDuration, right, trackRoot.snapping, shiftTrim, clip.originalDuration * speedController.originalSpeed / speedController.lastValidDuration)
                 speedController.originalSpeed = 1
             } else {
-                if (K.Core.activeTool === K.ToolType.RippleTool) {
+                if (useRipple) {
                     trackRoot.timeline.requestItemRippleResize(clip.clipId, clip.lastValidDuration, right, true, 0, shiftTrim)
                     trackRoot.timeline.requestEndTrimmingMode();
                 } else {

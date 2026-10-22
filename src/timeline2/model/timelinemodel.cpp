@@ -4757,18 +4757,66 @@ int TimelineModel::requestItemRippleResize(const std::shared_ptr<TimelineItemMod
     int finalPos = right ? in + size : out - size;
     int finalSize;
     int resizedCount = 0;
-    for (int id : all_items) {
-        int trackId = getItemTrackId(id);
-        if (trackId > -1 && trackIsLocked(trackId)) {
-            continue;
+    if (offset > 0 && isClip(itemId)) {
+        // Quando encurtamos (delta < 0 / offset > 0) um grupo V1+A1, primeiro encurtamos TODOS os itens do grupo
+        // para abrir o espaço em branco em V1 e A1 simultaneamente antes do spacer puxar os clipes seguintes.
+        for (int id : all_items) {
+            int trackId = getItemTrackId(id);
+            if (trackId > -1 && trackIsLocked(trackId)) {
+                continue;
+            }
+            if (right) {
+                finalSize = finalPos - qMax(0, getItemPosition(id));
+            } else {
+                finalSize = qMax(0, getItemPosition(id)) + getItemPlaytime(id) - finalPos;
+            }
+            int updatedSize = finalSize;
+            result = result && requestItemResize(id, updatedSize, right, logUndo, undo, redo);
+            if (!result) {
+                break;
+            }
+            if (id == itemId) {
+                size = updatedSize;
+            }
+            resizedCount++;
         }
-        if (right) {
-            finalSize = finalPos - qMax(0, getItemPosition(id));
-        } else {
-            finalSize = qMax(0, getItemPosition(id)) + getItemPlaytime(id) - finalPos;
+        if (result && resizedCount != 0) {
+            const int delta = -offset;
+            for (int id : all_items) {
+                int trackId = getItemTrackId(id);
+                if (trackId <= -1 || trackIsLocked(trackId)) {
+                    continue;
+                }
+                if (right && getTrackById_const(trackId)->isLastClip(getItemPosition(id))) {
+                    continue;
+                }
+                if (getTrackById_const(trackId)->getBlankSizeNearClip(id, right) < -delta) {
+                    continue;
+                }
+                int position = right ? (getItemPosition(id) + getItemPlaytime(id) - delta) : getItemPosition(id);
+                std::pair<int, int> spacerOp = TimelineFunctions::requestSpacerStartOperation(timeline, trackId, position, true, true);
+                int cid = spacerOp.first;
+                if (cid != -1) {
+                    int endPos = getItemPosition(cid) + delta;
+                    TimelineFunctions::requestSpacerEndOperation(timeline, cid, getItemPosition(cid), endPos, trackId,
+                                                                 KdenliveSettings::lockedGuides() ? -1 : position, undo, redo, false);
+                }
+            }
         }
-        result = result && requestItemRippleResize(timeline, id, finalSize, right, logUndo, moveGuides, undo, redo);
-        resizedCount++;
+    } else {
+        for (int id : all_items) {
+            int trackId = getItemTrackId(id);
+            if (trackId > -1 && trackIsLocked(trackId)) {
+                continue;
+            }
+            if (right) {
+                finalSize = finalPos - qMax(0, getItemPosition(id));
+            } else {
+                finalSize = qMax(0, getItemPosition(id)) + getItemPlaytime(id) - finalPos;
+            }
+            result = result && requestItemRippleResize(timeline, id, finalSize, right, logUndo, moveGuides, undo, redo);
+            resizedCount++;
+        }
     }
     result = result && resizedCount != 0;
     if (!result) {
@@ -4848,7 +4896,14 @@ bool TimelineModel::requestItemRippleResize(const std::shared_ptr<TimelineItemMo
             if (right && getTrackById_const(trackId)->isLastClip(getItemPosition(itemId))) {
                 return true;
             }
-            std::pair<int, int> spacerOp = TimelineFunctions::requestSpacerStartOperation(timeline, affectAllTracks ? -1 : trackId, position + 1, true, true);
+            if (delta > 0 && getTrackById_const(trackId)->getBlankSizeNearClip(itemId, right) >= delta) {
+                // O espaço em branco já foi aberto pelo clipe parceiro do grupo (V1/A1)
+                return true;
+            }
+            if (delta < 0 && getTrackById_const(trackId)->getBlankSizeNearClip(itemId, right) < -delta) {
+                return true;
+            }
+            std::pair<int, int> spacerOp = TimelineFunctions::requestSpacerStartOperation(timeline, affectAllTracks ? -1 : trackId, position, true, true);
             int cid = spacerOp.first;
             if (cid == -1) {
                 return false;

@@ -1144,23 +1144,24 @@ Rectangle {
                     if (!shiftTrim && (clipRoot.grouped || clipRoot.controller.hasMultipleSelection())) {
                         clipRoot.initGroupTrim(clipRoot.clipId)
                     }
-                    if (K.Core.activeTool === K.ToolType.RippleTool) { //TODO
+                    if (K.Core.activeTool === K.ToolType.RippleTool || (K.Core.activeTool === K.ToolType.SelectTool && !controlTrim && !shiftTrim && clipRoot.mixDuration <= 0)) {
                         clipRoot.timeline.requestStartTrimmingMode(clipRoot.clipId, false, false);
                     }
                 }
                 onReleased: {
                     trimIn.opacity = 0
                     x = -itemBorder.border.width
+                    let useRipple = K.Core.activeTool === K.ToolType.RippleTool || (K.Core.activeTool === K.ToolType.SelectTool && !controlTrim && !shiftTrim && clipRoot.mixDuration <= 0);
                     if (sizeChanged) {
                         clipRoot.trimmedIn(clipRoot, shiftTrim, controlTrim)
                         sizeChanged = false
-                        if (!controlTrim && K.Core.activeTool !== K.ToolType.RippleTool) {
+                        if (!controlTrim && !useRipple) {
                             clipRoot.updateDrag()
                         } else {
                             clipRoot.endDrag()
                         }
                     } else {
-                        if (K.Core.activeTool === K.ToolType.RippleTool) { //TODO
+                        if (useRipple) {
                             clipRoot.timeline.requestEndTrimmingMode();
                         } else if (clipRoot.timeline.selection.indexOf(clipRoot.clipId) === -1) {
                             clipRoot.controller.requestAddToSelection(clipRoot.clipId, shiftTrim ? false : true)
@@ -1191,7 +1192,8 @@ Rectangle {
                                 }
                             }
                             var newDuration = 0;
-                            if (K.Core.activeTool === K.ToolType.RippleTool) {
+                            let useRipple = K.Core.activeTool === K.ToolType.RippleTool || (K.Core.activeTool === K.ToolType.SelectTool && !controlTrim && !shiftTrim && clipRoot.mixDuration <= 0);
+                            if (useRipple) {
                                 newDuration = clipRoot.originalDuration - delta
                             } else {
                                 if (clipRoot.maxDuration > 0 && delta < -clipRoot.inPoint && !(mouse.modifiers & Qt.ControlModifier)) {
@@ -1272,23 +1274,24 @@ Rectangle {
                     if (!shiftTrim && (clipRoot.grouped || clipRoot.controller.hasMultipleSelection())) {
                         clipRoot.initGroupTrim(clipRoot.clipId)
                     }
-                    if (K.Core.activeTool === K.ToolType.RippleTool) {
+                    if (K.Core.activeTool === K.ToolType.RippleTool || (K.Core.activeTool === K.ToolType.SelectTool && !controlTrim && !shiftTrim && clipRoot.mixDuration <= 0)) {
                         clipRoot.timeline.requestStartTrimmingMode(clipRoot.clipId, false, true);
                     }
                 }
                 onReleased: {
                     trimOut.opacity = 0
                     anchors.right = parent.right
+                    let useRipple = K.Core.activeTool === K.ToolType.RippleTool || (K.Core.activeTool === K.ToolType.SelectTool && !controlTrim && !shiftTrim && clipRoot.mixDuration <= 0);
                     if (sizeChanged) {
                         clipRoot.trimmedOut(clipRoot, shiftTrim, controlTrim)
                         sizeChanged = false
-                        if (!controlTrim && K.Core.activeTool !== K.ToolType.RippleTool) {
+                        if (!controlTrim && !useRipple) {
                             clipRoot.updateDrag()
                         } else {
                             clipRoot.endDrag()
                         }
                     } else {
-                        if (K.Core.activeTool === K.ToolType.RippleTool) {
+                        if (useRipple) {
                             clipRoot.timeline.requestEndTrimmingMode();
                         } else if (clipRoot.timeline.selection.indexOf(clipRoot.clipId) === -1) {
                             clipRoot.controller.requestAddToSelection(clipRoot.clipId, shiftTrim ? false : true)
