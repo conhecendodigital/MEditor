@@ -211,12 +211,13 @@ Window {
                     anchors.right: parent.right
                     anchors.margins: 10
                     color: "#FFFFFF"
-                    text: "MEditor • baseado no Kdenlive (KDE)"
+                    text: "MEditor • Edição no Ponto"
                 }
 
-                // Made By KDE
+                // Logo
                 Image {
                     id: kdelogo
+                    visible: false
                     asynchronous: true
                     anchors.verticalCenter: kdelabel.verticalCenter
                     anchors.right: kdelabel.left

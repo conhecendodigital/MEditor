@@ -107,7 +107,8 @@ Window {
                     anchors.left: parent.left
                     anchors.margins: 10
                     height: kdelabel.height
-                    width: height
+                    width: 0
+                    visible: false
                     source: "qrc:/pics/kde-logo.png"
                     fillMode: Image.PreserveAspectFit
                 }
@@ -115,7 +116,7 @@ Window {
                     id: kdelabel
                     anchors.verticalCenter: kdelogo.verticalCenter
                     anchors.left: kdelogo.right
-                    text: "MEditor • baseado no Kdenlive (KDE)"
+                    text: "MEditor • Edição no Ponto"
                     color: "#ffffff"
                 }
             }

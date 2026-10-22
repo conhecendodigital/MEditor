@@ -301,16 +301,13 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Create KAboutData (MEditor — baseado no Kdenlive, preservando créditos originais do KDE/Kdenlive)
-    QString otherText = i18n("Baseado no Kdenlive (GPL-3.0), projeto oficial da comunidade KDE (<a href=\"%1\">%1</a>).<br/>"
-                             "Relatório de bugs do projeto base: <a href=\"%2\">%3</a>",
-                             QStringLiteral("https://kdenlive.org"),
-                             QStringLiteral("https://bugs.kde.org/enter_bug.cgi?product=kdenlive"),
-                             QStringLiteral("https://bugs.kde.org/"));
+    // Create KAboutData (MEditor)
+    QString otherText = i18n("Editor de vídeo Edição no Ponto (<a href=\"%1\">%1</a>).",
+                             QStringLiteral("https://edicaonoponto.com.br"));
 
     KAboutData aboutData(QByteArray("kdenlive"), i18n("MEditor"), KDENLIVE_VERSION,
-                         i18n("Editor de vídeo Edição no Ponto — baseado no Kdenlive (GPL-3.0)."), KAboutLicense::GPL_V3,
-                         i18n("Copyright © 2007–2025 Kdenlive authors"), otherText, QStringLiteral("https://edicaonoponto.com.br"));
+                         i18n("Editor de vídeo Edição no Ponto."), KAboutLicense::GPL_V3,
+                         i18n("Copyright © Edição no Ponto"), otherText, QStringLiteral("https://edicaonoponto.com.br"));
     // main developers (alphabetical)
     aboutData.addAuthor(i18n("Jean-Baptiste Mardelle"), i18n("Core team member, main developer and maintainer, MLT, and KDE SC 4 / KF5 port"), QStringLiteral("jb@kdenlive.org"));
     // active developers with major involvement
@@ -336,9 +333,7 @@ int main(int argc, char *argv[])
     aboutData.setTranslator(i18n("NAME OF TRANSLATORS"), i18n("EMAIL OF TRANSLATORS"));
     aboutData.setOrganizationDomain(QByteArray("edicaonoponto.com.br"));
 
-    aboutData.addComponent(aboutData.displayName(), i18n("Baseado no Kdenlive (GPL-3.0)"), KDENLIVE_FULL_VERSION_STRING, aboutData.homepage());
-    aboutData.addComponent(QStringLiteral("Kdenlive (upstream)"), i18n("Projeto base oficial da comunidade KDE (GPL-3.0)."),
-                           KDENLIVE_FULL_VERSION_STRING, QStringLiteral("https://kdenlive.org"));
+    aboutData.addComponent(aboutData.displayName(), i18n("Editor de vídeo Edição no Ponto."), KDENLIVE_FULL_VERSION_STRING, aboutData.homepage());
 
     aboutData.addComponent(i18n("MLT"), i18n("Open source multimedia framework."), mlt_version_get_string(),
                            QStringLiteral("https://mltframework.org") /*, KAboutLicense::LGPL_V2_1*/);
