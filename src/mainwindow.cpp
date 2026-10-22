@@ -3643,12 +3643,18 @@ void MainWindow::slotInitSubtitle(const QMap<QString, QString> &subProperties, c
     Q_ASSERT(!timeline->hasSubtitleModel());
     std::shared_ptr<SubtitleModel> subtitleModel = timeline->createSubtitleModel();
     // Starting a new subtitle for this project
-    pCore->subtitleWidget()->setModel(subtitleModel);
+    if (pCore->subtitleWidget()) {
+        pCore->subtitleWidget()->setModel(subtitleModel);
+    }
     subtitleModel->loadProperties(subProperties);
-    if (uuid == pCore->currentTimelineId() && pCore->currentDoc()->getSequenceProperty(uuid, QStringLiteral("hidesubtitle")).toInt() == 0) {
+    if (pCore->subtitleWidget() && uuid == pCore->currentTimelineId() && pCore->currentDoc()->getSequenceProperty(uuid, QStringLiteral("hidesubtitle")).toInt() == 0) {
         KdenliveSettings::setShowSubtitles(true);
-        m_buttonSubtitleEditTool->setChecked(true);
-        getCurrentTimeline()->connectSubtitleModel(true);
+        if (m_buttonSubtitleEditTool) {
+            m_buttonSubtitleEditTool->setChecked(true);
+        }
+        if (getCurrentTimeline()) {
+            getCurrentTimeline()->connectSubtitleModel(true);
+        }
     }
 }
 

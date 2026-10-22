@@ -1262,11 +1262,13 @@ void SubtitleModel::jsontoSubtitle(const QJsonArray &data)
     }
     int line = saveSubtitleData(data, outFile);
     qDebug() << "Saving subtitle filter: " << outFile;
-    if (line > 0) {
-        m_subtitleFilter->set("av.filename", outFile.toUtf8().constData());
-        m_timeline->tractor()->attach(*m_subtitleFilter.get());
-    } else {
-        m_timeline->tractor()->detach(*m_subtitleFilter.get());
+    if (m_timeline && m_timeline->tractor()) {
+        if (line > 0) {
+            m_subtitleFilter->set("av.filename", outFile.toUtf8().constData());
+            m_timeline->tractor()->attach(*m_subtitleFilter.get());
+        } else {
+            m_timeline->tractor()->detach(*m_subtitleFilter.get());
+        }
     }
 }
 
