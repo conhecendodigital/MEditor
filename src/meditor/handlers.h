@@ -97,6 +97,7 @@ public:
     bool handleSubtitleAdd(const QJsonObject &params, QJsonObject &outResult, QString &outError);
     bool handleSubtitleEdit(const QJsonObject &params, QJsonObject &outResult, QString &outError);
     bool handleSubtitleDelete(const QJsonObject &params, QJsonObject &outResult, QString &outError);
+    bool handleSubtitleStyle(const QJsonObject &params, QJsonObject &outResult, QString &outError);
     bool handleTrackAdd(const QJsonObject &params, QJsonObject &outResult, QString &outError);
     bool handleTitleAdd(const QJsonObject &params, QJsonObject &outResult, QString &outError);
     bool handleTitleEdit(const QJsonObject &params, QJsonObject &outResult, QString &outError);

@@ -9,6 +9,7 @@
 
 class SubtitleModel;
 class TimecodeDisplay;
+class QTimer;
 
 class SimpleEditorEventFilter : public QObject
 {
@@ -68,6 +69,7 @@ private:
     std::vector<std::pair<int, std::pair<int, int>>> m_offsets;
     GenTime m_startPos;
     GenTime m_endPos;
+    QTimer *m_autoApplyTimer{nullptr};
 
     void updateCharInfo();
     void applyFontSize();

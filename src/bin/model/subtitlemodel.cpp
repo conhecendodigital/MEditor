@@ -221,9 +221,11 @@ void SubtitleModel::importSubtitle(const QString &filePath, int offset, bool ext
         m_scriptInfo["ScaledBorderAndShadow"] = "yes";
         m_scriptInfo["YCbCr Matrix"] = "None";
 
-        m_subtitleStyles["Default"] = SubtitleStyle();
-        m_subtitleStyles["Default"].setFontSize(fontSize);
-        m_subtitleStyles["Default"].setMarginV(fontMargin);
+        m_subtitleStyles["Default"] = SubtitleStyle(
+            QStringLiteral("Montserrat"), 70, QColor(255, 255, 255, 255), QColor(255, 212, 0, 255),
+            QColor(0, 0, 0, 255), QColor(0, 0, 0, 180), true, false, false, false,
+            100, 100, 0, 0, 1, 5, 0, 2, 120, 120, frameSize.height() >= 1800 ? 470 : int(fontMargin), 1);
+        ensureEditorIAPresets();
     }
 
     if (filePath.endsWith(".srt") || filePath.endsWith(".vtt") || filePath.endsWith(".sbv")) {
@@ -416,6 +418,7 @@ void SubtitleModel::importSubtitle(const QString &filePath, int offset, bool ext
         turn = 0;
         r = 0;
     }
+    ensureEditorIAPresets();
     if (initialCount == m_subtitleList.size() && externalImport) {
         // Nothing imported
         pCore->displayMessage(i18n("The selected file %1 is invalid.", filePath), ErrorMessage);
@@ -1893,11 +1896,20 @@ const std::map<QString, SubtitleStyle> &SubtitleModel::getAllSubtitleStyles(bool
 
 const SubtitleStyle &SubtitleModel::getSubtitleStyle(const QString &name, bool global) const
 {
-    if (global) {
-        return m_globalSubtitleStyles.at(name);
-    } else {
-        return m_subtitleStyles.at(name);
+    static const SubtitleStyle kFallbackStyle;
+    const auto &stylesMap = global ? m_globalSubtitleStyles : m_subtitleStyles;
+    auto it = stylesMap.find(name);
+    if (it != stylesMap.end()) {
+        return it->second;
     }
+    auto defIt = stylesMap.find(QStringLiteral("Default"));
+    if (defIt != stylesMap.end()) {
+        return defIt->second;
+    }
+    if (!stylesMap.empty()) {
+        return stylesMap.begin()->second;
+    }
+    return kFallbackStyle;
 }
 
 void SubtitleModel::setSubtitleStyle(const QString &name, const SubtitleStyle &style, bool global)
@@ -1924,6 +1936,142 @@ void SubtitleModel::deleteSubtitleStyle(const QString &name, bool global)
         m_subtitleStyles.erase(name);
         Q_EMIT modelChanged();
     }
+}
+
+void SubtitleModel::ensureEditorIAPresets()
+{
+    auto addPresetIfMissing = [this](const QString &name, const SubtitleStyle &style) {
+        if (m_subtitleStyles.find(name) == m_subtitleStyles.end()) {
+            m_subtitleStyles[name] = style;
+        }
+        if (m_globalSubtitleStyles.find(name) == m_globalSubtitleStyles.end()) {
+            m_globalSubtitleStyles[name] = style;
+        }
+    };
+
+    // 1. Costura (Produto Topo / Split-Screen Seam - Montserrat ExtraBold 54px, pílula escura #3B3D40 centralizada no divisor)
+    addPresetIfMissing(
+        QStringLiteral("Costura"),
+        SubtitleStyle(QStringLiteral("Montserrat ExtraBold"), 54, QColor(255, 255, 255, 255), QColor(255, 255, 255, 255),
+                      QColor(59, 61, 64, 255), QColor(59, 61, 64, 255), true, false, false, false,
+                      100, 100, 5, 0, 3, 20, 0, 5, 40, 40, 0, 1));
+
+    // 2. Padrao_EditorIA (Padrão 2 palavras - Montserrat Bold 70px, branco com contorno preto 5px na zona segura y=1450)
+    addPresetIfMissing(
+        QStringLiteral("Padrao_EditorIA"),
+        SubtitleStyle(QStringLiteral("Montserrat"), 70, QColor(255, 255, 255, 255), QColor(255, 212, 0, 255),
+                      QColor(0, 0, 0, 255), QColor(0, 0, 0, 180), true, false, false, false,
+                      100, 100, 0, 0, 1, 5, 0, 2, 120, 120, 470, 1));
+
+    // 3. Destaque_Amarelo (CapCut / Hormozi Amarelo #FFD400 - Montserrat ExtraBold 74px, contorno preto 6px + sombra)
+    addPresetIfMissing(
+        QStringLiteral("Destaque_Amarelo"),
+        SubtitleStyle(QStringLiteral("Montserrat ExtraBold"), 74, QColor(255, 212, 0, 255), QColor(255, 255, 255, 255),
+                      QColor(0, 0, 0, 255), QColor(0, 0, 0, 210), true, false, false, false,
+                      100, 100, 1, 0, 1, 6, 3, 2, 100, 100, 470, 1));
+
+    // 4. Pilula_Verde (Karaokê Pílula #2CE386 - Montserrat ExtraBold 64px, texto escuro sobre pílula verde vibrante)
+    addPresetIfMissing(
+        QStringLiteral("Pilula_Verde"),
+        SubtitleStyle(QStringLiteral("Montserrat ExtraBold"), 64, QColor(17, 17, 17, 255), QColor(255, 255, 255, 255),
+                      QColor(44, 227, 134, 255), QColor(44, 227, 134, 255), true, false, false, false,
+                      100, 100, 2, 0, 3, 18, 0, 2, 100, 100, 470, 1));
+
+    // 5. Pilula_Azul (Costura Azul Royal #0D47A1 - Montserrat ExtraBold 56px, texto branco sobre pílula azul)
+    addPresetIfMissing(
+        QStringLiteral("Pilula_Azul"),
+        SubtitleStyle(QStringLiteral("Montserrat ExtraBold"), 56, QColor(255, 255, 255, 255), QColor(255, 255, 255, 255),
+                      QColor(13, 71, 161, 255), QColor(13, 71, 161, 255), true, false, false, false,
+                      100, 100, 4, 0, 3, 18, 0, 5, 40, 40, 0, 1));
+
+    // 6. Caixa_Alta_Impacto (Montserrat Black 80px centralizado, contorno forte 7px + sombra 4px)
+    addPresetIfMissing(
+        QStringLiteral("Caixa_Alta_Impacto"),
+        SubtitleStyle(QStringLiteral("Montserrat Black"), 80, QColor(255, 255, 255, 255), QColor(255, 212, 0, 255),
+                      QColor(0, 0, 0, 255), QColor(0, 0, 0, 230), true, false, false, false,
+                      100, 100, 2, 0, 1, 7, 4, 5, 80, 80, 0, 1));
+
+    // 7. Editorial_Limpa (Space Grotesk 60px, contorno fino 2px + sombra suave 3px na base)
+    addPresetIfMissing(
+        QStringLiteral("Editorial_Limpa"),
+        SubtitleStyle(QStringLiteral("Space Grotesk"), 60, QColor(255, 255, 255, 255), QColor(255, 255, 255, 255),
+                      QColor(0, 0, 0, 180), QColor(0, 0, 0, 180), true, false, false, false,
+                      100, 100, 0, 0, 1, 2, 3, 2, 120, 120, 470, 1));
+
+    // 8. Ancora_Amarela (Montserrat Bold 66px amarelo #FFD12A na base)
+    addPresetIfMissing(
+        QStringLiteral("Ancora_Amarela"),
+        SubtitleStyle(QStringLiteral("Montserrat"), 66, QColor(255, 209, 42, 255), QColor(255, 255, 255, 255),
+                      QColor(0, 0, 0, 255), QColor(0, 0, 0, 180), true, false, false, false,
+                      100, 100, 0, 0, 1, 4, 2, 2, 120, 120, 470, 1));
+}
+
+void SubtitleModel::applyStyleToAll(const QString &styleName, bool stripOverrideTags)
+{
+    ensureEditorIAPresets();
+    if (m_subtitleStyles.find(styleName) == m_subtitleStyles.end()) {
+        return;
+    }
+
+    static const QRegularExpression kOverrideBlockRe(QStringLiteral("(?<!\\\\)\\{[^}]*\\}"));
+    struct PrevSubState
+    {
+        QString styleName;
+        QString text;
+        int marginL;
+        int marginR;
+        int marginV;
+    };
+    std::map<std::pair<int, GenTime>, PrevSubState> previousStates;
+    for (const auto &entry : m_subtitleList) {
+        previousStates[entry.first] = {entry.second.styleName(), entry.second.text(),
+                                       entry.second.marginL(), entry.second.marginR(), entry.second.marginV()};
+    }
+
+    Fun redo = [this, styleName, stripOverrideTags]() {
+        for (auto &entry : m_subtitleList) {
+            entry.second.setStyleName(styleName);
+            entry.second.setMarginL(0);
+            entry.second.setMarginR(0);
+            entry.second.setMarginV(0);
+            if (stripOverrideTags) {
+                QString cleaned = entry.second.text();
+                cleaned.remove(kOverrideBlockRe);
+                entry.second.setText(cleaned.trimmed());
+            }
+        }
+        setLayerDefaultStyle(0, styleName);
+        if (!m_subtitleList.empty()) {
+            Q_EMIT dataChanged(index(0), index(int(m_subtitleList.size()) - 1),
+                               {SubtitleRole, StyleNameRole, MarginLRole, MarginRRole, MarginVRole});
+        }
+        Q_EMIT modelChanged();
+        pCore->refreshProjectMonitorOnce();
+        return true;
+    };
+
+    Fun undo = [this, previousStates]() {
+        for (auto &entry : m_subtitleList) {
+            auto it = previousStates.find(entry.first);
+            if (it != previousStates.end()) {
+                entry.second.setStyleName(it->second.styleName);
+                entry.second.setText(it->second.text);
+                entry.second.setMarginL(it->second.marginL);
+                entry.second.setMarginR(it->second.marginR);
+                entry.second.setMarginV(it->second.marginV);
+            }
+        }
+        if (!m_subtitleList.empty()) {
+            Q_EMIT dataChanged(index(0), index(int(m_subtitleList.size()) - 1),
+                               {SubtitleRole, StyleNameRole, MarginLRole, MarginRRole, MarginVRole});
+        }
+        Q_EMIT modelChanged();
+        pCore->refreshProjectMonitorOnce();
+        return true;
+    };
+
+    redo();
+    pCore->pushUndo(undo, redo, i18n("Apply style to all subtitles"));
 }
 
 int SubtitleModel::createNewSubtitle(const QString subtitleName, int id)

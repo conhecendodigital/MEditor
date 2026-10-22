@@ -226,6 +226,7 @@ QStringList MEditorApiServer::supportedMethods()
         QStringLiteral("subtitle.add"),
         QStringLiteral("subtitle.edit"),
         QStringLiteral("subtitle.delete"),
+        QStringLiteral("subtitle.style"),
         QStringLiteral("track.add"),
         QStringLiteral("title.add"),
         QStringLiteral("title.edit"),

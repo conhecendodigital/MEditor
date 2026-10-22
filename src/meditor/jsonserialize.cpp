@@ -395,6 +395,7 @@ QJsonArray JsonSerialize::serializeSubtitles(const std::shared_ptr<TimelineItemM
         sObj.insert(QStringLiteral("durationFrames"), std::max(0, endFrame - startFrame));
         sObj.insert(QStringLiteral("startSeconds"), startTime.seconds());
         sObj.insert(QStringLiteral("endSeconds"), endTime.seconds());
+        sObj.insert(QStringLiteral("style"), ev.styleName());
         sObj.insert(QStringLiteral("text"), ev.text());
         subsArr.append(sObj);
     }
@@ -517,6 +518,24 @@ QJsonObject JsonSerialize::serializeTimeline(int rev, int sinceRev)
     root.insert(QStringLiteral("guides"), guidesArr);
     root.insert(QStringLiteral("markers"), guidesArr);
     root.insert(QStringLiteral("subtitles"), subtitlesArr);
+    if (timeline && timeline->getSubtitleModel()) {
+        auto subModel = timeline->getSubtitleModel();
+        subModel->ensureEditorIAPresets();
+        QJsonArray stylesArr;
+        for (const auto &stEntry : subModel->getAllSubtitleStyles()) {
+            QJsonObject stObj;
+            stObj.insert(QStringLiteral("name"), stEntry.first);
+            stObj.insert(QStringLiteral("fontName"), stEntry.second.fontName());
+            stObj.insert(QStringLiteral("fontSize"), stEntry.second.fontSize());
+            stObj.insert(QStringLiteral("bold"), stEntry.second.bold());
+            stObj.insert(QStringLiteral("borderStyle"), stEntry.second.borderStyle());
+            stObj.insert(QStringLiteral("outline"), stEntry.second.outline());
+            stObj.insert(QStringLiteral("alignment"), stEntry.second.alignment());
+            stObj.insert(QStringLiteral("marginV"), stEntry.second.marginV());
+            stylesArr.append(stObj);
+        }
+        root.insert(QStringLiteral("subtitleStyles"), stylesArr);
+    }
     root.insert(QStringLiteral("bin"), binArr);
 
     return root;

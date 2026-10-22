@@ -143,11 +143,19 @@ SubtitleEdit::SubtitleEdit(QWidget *parent)
         QTimer::singleShot(10, this, [&]() { syncSimpleText(); });
     });
 
+    m_autoApplyTimer = new QTimer(this);
+    m_autoApplyTimer->setSingleShot(true);
+    m_autoApplyTimer->setInterval(300);
+    connect(m_autoApplyTimer, &QTimer::timeout, this, &SubtitleEdit::updateSubtitle);
+
     connect(filter, &SimpleEditorEventFilter::triggerUpdate, this, &SubtitleEdit::updateSubtitle);
     connect(subText, &SubtitleTextEdit::triggerUpdate, this, &SubtitleEdit::updateSubtitle);
     connect(subText, &SubtitleTextEdit::textChanged, this, [this]() {
         if (m_activeSub > -1) {
             buttonApply->setEnabled(true);
+            if (m_autoApplyTimer) {
+                m_autoApplyTimer->start();
+            }
         }
         updateOffset();
         updateCharInfo();
@@ -235,30 +243,43 @@ SubtitleEdit::SubtitleEdit(QWidget *parent)
     });
 
     connect(buttonEditStyle, &QToolButton::clicked, this, [this]() {
-        bool ok;
-        QString styleName = m_model->getStyleName(m_activeSub);
+        if (!m_model) {
+            return;
+        }
+        m_model->ensureEditorIAPresets();
+        bool ok = false;
+        QString styleName = (m_activeSub > -1) ? m_model->getStyleName(m_activeSub) : comboStyle->currentText();
+        if (styleName.isEmpty() || styleName == i18n("Manage Styles…")) {
+            styleName = QStringLiteral("Padrao_EditorIA");
+        }
         SubtitleStyle style = SubtitleStyleEdit::getStyle(this, m_model->getSubtitleStyle(styleName), styleName, m_model, false, &ok);
         if (ok) {
             m_model->setSubtitleStyle(styleName, style);
-            if (m_model->getStyleName(m_activeSub) != styleName) {
-                comboStyle->addItem(styleName);
-                comboStyle->setCurrentIndex(comboStyle->findText(styleName));
-                // update the style of the subtitle automatically
+            m_model->applyStyleToAll(styleName, false);
+            if (comboStyle->findText(styleName) < 0) {
+                comboStyle->insertItem(std::max(0, comboStyle->count() - 1), styleName);
             }
+            QSignalBlocker bk(comboStyle);
+            comboStyle->setCurrentIndex(comboStyle->findText(styleName));
             pCore->refreshProjectMonitorOnce();
         }
     });
-    buttonEditStyle->setToolTip(i18n("Edit subtitle style"));
-    buttonEditStyle->setWhatsThis(xi18nc("@info:whatsthis", "Opens a dialog to edit the current subtitle."));
+    buttonEditStyle->setToolTip(i18n("Edit subtitle style (applies to all subtitles)"));
+    buttonEditStyle->setWhatsThis(xi18nc("@info:whatsthis", "Opens a dialog to edit the subtitle style across the video."));
     connect(comboStyle, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
+        if (!m_model || index < 0) {
+            return;
+        }
         if (index == comboStyle->count() - 1) {
             // open the style editor
             Q_EMIT showSubtitleManager(2);
             setActiveSubtitle(m_activeSub);
             return;
         }
-        if (m_activeSub > -1) {
-            m_model->setStyleName(m_activeSub, comboStyle->currentText());
+        const QString chosenStyle = comboStyle->currentText();
+        if (!chosenStyle.isEmpty()) {
+            // CapCut / Editor IA behavior: changing the style preset updates ALL subtitles in the video at once!
+            m_model->applyStyleToAll(chosenStyle, true);
         }
     });
     connect(buttonAdd, &QToolButton::clicked, this, [this]() { Q_EMIT addSubtitle(subText->toPlainText()); });
@@ -506,10 +527,19 @@ void SubtitleEdit::setModel(std::shared_ptr<SubtitleModel> model)
         subText->clear();
         frame_position->setEnabled(false);
     } else {
+        m_model->ensureEditorIAPresets();
         connect(this, &SubtitleEdit::deleteSubtitleRequested, m_model->timeline().get(), &TimelineModel::requestSingleSubtitleDeletion);
         connect(m_model.get(), &SubtitleModel::rowsRemoved, this, [this]() {
             if (m_activeSub >= 0 && !m_model->hasSubtitle(m_activeSub)) {
                 setActiveSubtitle(-1);
+            }
+        });
+        connect(m_model.get(), &SubtitleModel::modelChanged, this, [this]() {
+            if (m_activeSub < 0 && m_model && m_model->count() > 0) {
+                auto firstPair = m_model->getSubtitleIdFromIndex(0);
+                if (firstPair.first > -1) {
+                    setActiveSubtitle(firstPair.first);
+                }
             }
         });
         connect(m_model.get(), &SubtitleModel::dataChanged, this, [this](const QModelIndex &start, const QModelIndex &, const QVector<int> &roles) {
@@ -524,7 +554,19 @@ void SubtitleEdit::setModel(std::shared_ptr<SubtitleModel> model)
         });
         connect(this, &SubtitleEdit::showSubtitleManager, m_model.get(), &SubtitleModel::showSubtitleManager);
         frame_position->setEnabled(true);
-        stackedWidget->widget(0)->setEnabled(false);
+        stackedWidget->widget(0)->setEnabled(true);
+        QSignalBlocker bk5(comboStyle);
+        comboStyle->clear();
+        for (auto &style : m_model->getAllSubtitleStyles()) {
+            comboStyle->addItem(style.first);
+        }
+        comboStyle->addItem(i18n("Manage Styles…"), -1);
+        if (m_model->count() > 0) {
+            auto firstPair = m_model->getSubtitleIdFromIndex(0);
+            if (firstPair.first > -1) {
+                setActiveSubtitle(firstPair.first);
+            }
+        }
     }
 }
 
@@ -549,7 +591,19 @@ void SubtitleEdit::updateSubtitle()
 
 void SubtitleEdit::setActiveSubtitle(int id)
 {
-    if (m_model == nullptr || (m_activeSub == id && id < 0)) {
+    if (m_model == nullptr) {
+        return;
+    }
+    if (m_activeSub > -1 && m_activeSub != id && buttonApply->isEnabled()) {
+        updateSubtitle();
+    }
+    if (id < 0 && m_model->count() > 0) {
+        auto firstPair = m_model->getSubtitleIdFromIndex(0);
+        if (firstPair.first > -1) {
+            id = firstPair.first;
+        }
+    }
+    if (m_activeSub == id && id < 0) {
         // Nothing to do
         return;
     }
@@ -557,6 +611,7 @@ void SubtitleEdit::setActiveSubtitle(int id)
     buttonApply->setEnabled(false);
     buttonCut->setEnabled(false);
     if (m_model && id > -1) {
+        m_model->ensureEditorIAPresets();
         subText->setEnabled(true);
         QSignalBlocker bk(subText);
         stackedWidget->widget(1)->setEnabled(true);
@@ -579,13 +634,17 @@ void SubtitleEdit::setActiveSubtitle(int id)
         QSignalBlocker bk16(editEffects);
         QSignalBlocker bk17(subLayer);
 
+        const QString modelText = m_model->getText(id);
         int anchor = subText->textCursor().anchor();
         int position = subText->textCursor().position();
-        subText->setPlainText(m_model->getText(id));
         QTextCursor cursor = subText->textCursor();
-        cursor.setPosition(anchor);
-        cursor.setPosition(position, QTextCursor::KeepAnchor);
-        subText->setTextCursor(cursor);
+        if (subText->toPlainText() != modelText) {
+            subText->setPlainText(modelText);
+            cursor = subText->textCursor();
+            cursor.setPosition(std::min(anchor, int(modelText.size())));
+            cursor.setPosition(std::min(position, int(modelText.size())), QTextCursor::KeepAnchor);
+            subText->setTextCursor(cursor);
+        }
 
         if (!m_isSimpleEdit) {
             simpleSubText->hide();
@@ -958,6 +1017,19 @@ void SubtitleEdit::slotToggleBold()
 {
     static const QRegularExpression fontWeightRegex("\\\\b\\d+");
     QTextCursor cursor = subText->textCursor();
+    if (!cursor.hasSelection() && m_model) {
+        m_model->ensureEditorIAPresets();
+        QString styleName = (m_activeSub > -1) ? m_model->getStyleName(m_activeSub) : comboStyle->currentText();
+        if (styleName.isEmpty() || styleName == i18n("Manage Styles…")) {
+            styleName = QStringLiteral("Padrao_EditorIA");
+        }
+        SubtitleStyle st = m_model->getSubtitleStyle(styleName);
+        st.setBold(!st.bold());
+        m_model->setSubtitleStyle(styleName, st);
+        m_model->applyStyleToAll(styleName, true);
+        pCore->refreshProjectMonitorOnce();
+        return;
+    }
     auto checkBold = [this](QTextCursor cursor) {
         QTextCursor searchCursor = cursor;
         searchCursor.clearSelection();
@@ -1080,6 +1152,19 @@ void SubtitleEdit::slotToggleItalic()
 {
     // use regex to fix wrong italic tags automatically
     static const QRegularExpression fontItalicRegex("\\\\i\\d+");
+    if (!subText->textCursor().hasSelection() && m_model) {
+        m_model->ensureEditorIAPresets();
+        QString styleName = (m_activeSub > -1) ? m_model->getStyleName(m_activeSub) : comboStyle->currentText();
+        if (styleName.isEmpty() || styleName == i18n("Manage Styles…")) {
+            styleName = QStringLiteral("Padrao_EditorIA");
+        }
+        SubtitleStyle st = m_model->getSubtitleStyle(styleName);
+        st.setItalic(!st.italic());
+        m_model->setSubtitleStyle(styleName, st);
+        m_model->applyStyleToAll(styleName, true);
+        pCore->refreshProjectMonitorOnce();
+        return;
+    }
     auto checkItalic = [this](QTextCursor cursor) {
         QTextCursor searchCursor = cursor;
         searchCursor.clearSelection();
@@ -1200,6 +1285,19 @@ void SubtitleEdit::slotToggleItalic()
 void SubtitleEdit::slotToggleUnderline()
 {
     static const QRegularExpression fontUnderlineRegex("\\\\u\\d+");
+    if (!subText->textCursor().hasSelection() && m_model) {
+        m_model->ensureEditorIAPresets();
+        QString styleName = (m_activeSub > -1) ? m_model->getStyleName(m_activeSub) : comboStyle->currentText();
+        if (styleName.isEmpty() || styleName == i18n("Manage Styles…")) {
+            styleName = QStringLiteral("Padrao_EditorIA");
+        }
+        SubtitleStyle st = m_model->getSubtitleStyle(styleName);
+        st.setUnderline(!st.underline());
+        m_model->setSubtitleStyle(styleName, st);
+        m_model->applyStyleToAll(styleName, true);
+        pCore->refreshProjectMonitorOnce();
+        return;
+    }
     auto checkUnderline = [this](QTextCursor cursor) {
         QTextCursor searchCursor = cursor;
         searchCursor.clearSelection();
@@ -1319,6 +1417,19 @@ void SubtitleEdit::slotToggleStrikeOut()
 {
 
     static const QRegularExpression fontStrikeOutRegex("\\\\s\\d+");
+    if (!subText->textCursor().hasSelection() && m_model) {
+        m_model->ensureEditorIAPresets();
+        QString styleName = (m_activeSub > -1) ? m_model->getStyleName(m_activeSub) : comboStyle->currentText();
+        if (styleName.isEmpty() || styleName == i18n("Manage Styles…")) {
+            styleName = QStringLiteral("Padrao_EditorIA");
+        }
+        SubtitleStyle st = m_model->getSubtitleStyle(styleName);
+        st.setStrikeOut(!st.strikeOut());
+        m_model->setSubtitleStyle(styleName, st);
+        m_model->applyStyleToAll(styleName, true);
+        pCore->refreshProjectMonitorOnce();
+        return;
+    }
     auto checkStrikeout = [this](QTextCursor cursor) {
         QTextCursor searchCursor = cursor;
         searchCursor.clearSelection();
@@ -1436,6 +1547,40 @@ void SubtitleEdit::slotToggleStrikeOut()
 
 void SubtitleEdit::slotSelectFont()
 {
+    if (m_model) {
+        m_model->ensureEditorIAPresets();
+        QString styleName = (m_activeSub > -1) ? m_model->getStyleName(m_activeSub) : comboStyle->currentText();
+        if (styleName.isEmpty() || styleName == i18n("Manage Styles…")) {
+            styleName = QStringLiteral("Padrao_EditorIA");
+        }
+        SubtitleStyle st = m_model->getSubtitleStyle(styleName);
+        QFont currentFont(st.fontName());
+        currentFont.setPointSizeF(st.fontSize() > 0 ? st.fontSize() : 60.0);
+        currentFont.setBold(st.bold());
+        currentFont.setItalic(st.italic());
+        currentFont.setUnderline(st.underline());
+        currentFont.setStrikeOut(st.strikeOut());
+
+        bool ok = false;
+        QFont chosenFont = QFontDialog::getFont(&ok, currentFont, this, i18n("Escolher fonte para todas as legendas"));
+        if (ok) {
+            st.setFontName(chosenFont.family());
+            if (chosenFont.pointSizeF() > 0) {
+                st.setFontSize(chosenFont.pointSizeF());
+            }
+            st.setBold(chosenFont.bold());
+            st.setItalic(chosenFont.italic());
+            st.setUnderline(chosenFont.underline());
+            st.setStrikeOut(chosenFont.strikeOut());
+            m_model->setSubtitleStyle(styleName, st);
+            m_model->applyStyleToAll(styleName, true);
+            if (buttonApply->isEnabled()) {
+                updateSubtitle();
+            }
+            pCore->refreshProjectMonitorOnce();
+        }
+        return;
+    }
     QTextCursor cursor = subText->textCursor();
     int cursorPos = cursor.selectionStart();
     cursor.clearSelection();

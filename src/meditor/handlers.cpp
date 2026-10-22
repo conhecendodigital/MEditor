@@ -257,6 +257,9 @@ bool Handlers::dispatch(const QString &method, const QJsonObject &params, QJsonO
     if (method == QLatin1String("subtitle.delete") || method == QLatin1String("subtitle.remove")) {
         return run(&Handlers::handleSubtitleDelete);
     }
+    if (method == QLatin1String("subtitle.style") || method == QLatin1String("subtitle.preset")) {
+        return run(&Handlers::handleSubtitleStyle);
+    }
     if (method == QLatin1String("track.add")) {
         return run(&Handlers::handleTrackAdd);
     }
@@ -1389,9 +1392,15 @@ bool Handlers::handleSubtitleAdd(const QJsonObject &params, QJsonObject &outResu
         return false;
     }
 
+    subModel->ensureEditorIAPresets();
     const GenTime startTime(startFrame, fps);
     const GenTime endTime(endFrame, fps);
-    const QString styleName = params.value(QStringLiteral("style")).toString(QStringLiteral("Default"));
+    QString defaultStyle = subModel->getLayerDefaultStyle(layer);
+    if (defaultStyle.isEmpty() || defaultStyle == QLatin1String("Default")) {
+        defaultStyle = QStringLiteral("Padrao_EditorIA");
+    }
+    const QString styleName = params.value(QStringLiteral("style"))
+                                  .toString(params.value(QStringLiteral("preset")).toString(defaultStyle));
     const SubtitleEvent event(true, endTime, styleName, QString(), 0, 0, 0, QString(), text);
 
     Fun localUndo = []() { return true; };
@@ -1406,9 +1415,13 @@ bool Handlers::handleSubtitleAdd(const QJsonObject &params, QJsonObject &outResu
     finalizeOperationUndo(localUndo, localRedo, QStringLiteral("Add subtitle"));
 
     const int subId = subModel->getIdForStartPos(layer, startTime);
+    if (pCore->subtitleWidget() && subModel->count() == 1 && subId >= 0) {
+        pCore->subtitleWidget()->setActiveSubtitle(subId);
+    }
     outResult.insert(QStringLiteral("ok"), true);
     outResult.insert(QStringLiteral("id"), subId);
     outResult.insert(QStringLiteral("layer"), layer);
+    outResult.insert(QStringLiteral("style"), styleName);
     outResult.insert(QStringLiteral("startFrame"), startFrame);
     outResult.insert(QStringLiteral("endFrame"), endFrame);
     outResult.insert(QStringLiteral("in"), startFrame);
@@ -1524,6 +1537,184 @@ bool Handlers::handleSubtitleDelete(const QJsonObject &params, QJsonObject &outR
 
     outResult.insert(QStringLiteral("ok"), true);
     outResult.insert(QStringLiteral("deletedId"), subId);
+    outResult.insert(QStringLiteral("rev"), pCore->undoIndex());
+    return true;
+}
+
+bool Handlers::handleSubtitleStyle(const QJsonObject &params, QJsonObject &outResult, QString &outError)
+{
+    auto timeline = activeTimeline();
+    if (!timeline) {
+        outError = QStringLiteral("No active timeline");
+        return false;
+    }
+
+    std::shared_ptr<SubtitleModel> subModel = timeline->getSubtitleModel();
+    if (!subModel) {
+        if (MainWindow *win = pCore->window()) {
+            win->slotEditSubtitle({});
+        }
+        subModel = timeline->getSubtitleModel();
+        if (!subModel) {
+            timeline->createSubtitleModel();
+            subModel = timeline->getSubtitleModel();
+        }
+    }
+    if (!subModel) {
+        outError = QStringLiteral("SubtitleModel could not be initialized");
+        return false;
+    }
+
+    subModel->ensureEditorIAPresets();
+
+    QString styleName = params.value(QStringLiteral("preset"))
+                            .toString(params.value(QStringLiteral("style"))
+                                          .toString(params.value(QStringLiteral("name")).toString()))
+                            .trimmed();
+    if (styleName.isEmpty()) {
+        if (subModel->count() > 0) {
+            auto firstPair = subModel->getSubtitleIdFromIndex(0);
+            if (firstPair.first > -1) {
+                styleName = subModel->getStyleName(firstPair.first);
+            }
+        }
+        if (styleName.isEmpty()) {
+            styleName = QStringLiteral("Padrao_EditorIA");
+        }
+    }
+
+    SubtitleStyle st = subModel->getSubtitleStyle(styleName);
+
+    auto parseHexColor = [](const QJsonValue &val, const QColor &fallback) -> QColor {
+        if (val.isUndefined() || val.isNull()) {
+            return fallback;
+        }
+        const QString s = val.toString().trimmed();
+        if (s.isEmpty()) {
+            return fallback;
+        }
+        if (s.contains(QLatin1Char(','))) {
+            const QStringList parts = s.split(QLatin1Char(','));
+            if (parts.size() >= 3) {
+                return QColor(parts[0].toInt(), parts[1].toInt(), parts[2].toInt(),
+                              parts.size() >= 4 ? parts[3].toInt() : 255);
+            }
+        }
+        QColor c(s);
+        return c.isValid() ? c : fallback;
+    };
+
+    const QString reqFont = params.value(QStringLiteral("fontName"))
+                                .toString(params.value(QStringLiteral("font")).toString())
+                                .trimmed();
+    if (!reqFont.isEmpty()) {
+        st.setFontName(reqFont);
+    }
+    const double reqSize = params.value(QStringLiteral("fontSize"))
+                               .toDouble(params.value(QStringLiteral("size")).toDouble(-1.0));
+    if (reqSize > 0.0) {
+        st.setFontSize(reqSize);
+    }
+    if (params.contains(QStringLiteral("bold"))) {
+        st.setBold(params.value(QStringLiteral("bold")).toBool());
+    }
+    if (params.contains(QStringLiteral("italic"))) {
+        st.setItalic(params.value(QStringLiteral("italic")).toBool());
+    }
+    if (params.contains(QStringLiteral("underline"))) {
+        st.setUnderline(params.value(QStringLiteral("underline")).toBool());
+    }
+    if (params.contains(QStringLiteral("strikeOut"))) {
+        st.setStrikeOut(params.value(QStringLiteral("strikeOut")).toBool());
+    }
+    if (params.contains(QStringLiteral("primaryColor")) || params.contains(QStringLiteral("color"))) {
+        st.setPrimaryColour(parseHexColor(params.contains(QStringLiteral("primaryColor"))
+                                              ? params.value(QStringLiteral("primaryColor"))
+                                              : params.value(QStringLiteral("color")),
+                                          st.primaryColour()));
+    }
+    if (params.contains(QStringLiteral("secondaryColor"))) {
+        st.setSecondaryColour(parseHexColor(params.value(QStringLiteral("secondaryColor")), st.secondaryColour()));
+    }
+    if (params.contains(QStringLiteral("outlineColor"))) {
+        st.setOutlineColour(parseHexColor(params.value(QStringLiteral("outlineColor")), st.outlineColour()));
+    }
+    if (params.contains(QStringLiteral("backColor")) || params.contains(QStringLiteral("boxColor"))) {
+        const QColor bc = parseHexColor(params.contains(QStringLiteral("backColor"))
+                                            ? params.value(QStringLiteral("backColor"))
+                                            : params.value(QStringLiteral("boxColor")),
+                                        st.backColour());
+        st.setBackColour(bc);
+        if (params.value(QStringLiteral("borderStyle")).toInt(st.borderStyle()) == 3 &&
+            !params.contains(QStringLiteral("outlineColor"))) {
+            st.setOutlineColour(bc);
+        }
+    }
+    if (params.contains(QStringLiteral("borderStyle"))) {
+        st.setBorderStyle(params.value(QStringLiteral("borderStyle")).toInt(st.borderStyle()));
+    }
+    if (params.contains(QStringLiteral("outline"))) {
+        st.setOutline(params.value(QStringLiteral("outline")).toDouble(st.outline()));
+    }
+    if (params.contains(QStringLiteral("shadow"))) {
+        st.setShadow(params.value(QStringLiteral("shadow")).toDouble(st.shadow()));
+    }
+    if (params.contains(QStringLiteral("spacing"))) {
+        st.setSpacing(params.value(QStringLiteral("spacing")).toDouble(st.spacing()));
+    }
+    if (params.contains(QStringLiteral("alignment"))) {
+        st.setAlignment(params.value(QStringLiteral("alignment")).toInt(st.alignment()));
+    }
+    if (params.contains(QStringLiteral("marginL"))) {
+        st.setMarginL(params.value(QStringLiteral("marginL")).toInt(st.marginL()));
+    }
+    if (params.contains(QStringLiteral("marginR"))) {
+        st.setMarginR(params.value(QStringLiteral("marginR")).toInt(st.marginR()));
+    }
+    if (params.contains(QStringLiteral("marginV"))) {
+        st.setMarginV(params.value(QStringLiteral("marginV")).toInt(st.marginV()));
+    }
+
+    subModel->setSubtitleStyle(styleName, st);
+    subModel->applyStyleToAll(styleName, params.value(QStringLiteral("stripOverrideTags")).toBool(true));
+
+    if (params.contains(QStringLiteral("uppercase")) || params.contains(QStringLiteral("lowercase"))) {
+        const bool toUpper = params.value(QStringLiteral("uppercase")).toBool(false);
+        const bool toLower = params.value(QStringLiteral("lowercase")).toBool(false);
+        if (toUpper || toLower) {
+            for (int sid : subModel->getAllSubIds()) {
+                const QString cur = subModel->getText(sid);
+                const QString next = toUpper ? cur.toUpper() : cur.toLower();
+                if (next != cur) {
+                    subModel->setText(sid, next);
+                }
+            }
+        }
+    }
+
+    if (pCore->subtitleWidget()) {
+        auto firstPair = subModel->getSubtitleIdFromIndex(0);
+        if (firstPair.first > -1) {
+            pCore->subtitleWidget()->setActiveSubtitle(firstPair.first);
+        }
+    }
+
+    QJsonArray stylesList;
+    for (const auto &entry : subModel->getAllSubtitleStyles()) {
+        stylesList.append(entry.first);
+    }
+
+    outResult.insert(QStringLiteral("ok"), true);
+    outResult.insert(QStringLiteral("activeStyle"), styleName);
+    outResult.insert(QStringLiteral("fontName"), st.fontName());
+    outResult.insert(QStringLiteral("fontSize"), st.fontSize());
+    outResult.insert(QStringLiteral("bold"), st.bold());
+    outResult.insert(QStringLiteral("borderStyle"), st.borderStyle());
+    outResult.insert(QStringLiteral("outline"), st.outline());
+    outResult.insert(QStringLiteral("alignment"), st.alignment());
+    outResult.insert(QStringLiteral("marginV"), st.marginV());
+    outResult.insert(QStringLiteral("availableStyles"), stylesList);
+    outResult.insert(QStringLiteral("subtitlesUpdated"), subModel->count());
     outResult.insert(QStringLiteral("rev"), pCore->undoIndex());
     return true;
 }

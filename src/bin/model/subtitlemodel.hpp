@@ -241,6 +241,10 @@ public:
     void setSubtitleStyle(const QString &name, const SubtitleStyle &style, bool global = false);
     /** @brief Delete a subtitle style */
     void deleteSubtitleStyle(const QString &name, bool global = false);
+    /** @brief Ensure Editor IA and CapCut preset styles are registered in this model */
+    void ensureEditorIAPresets();
+    /** @brief Apply a subtitle style to all subtitles in this model at once */
+    void applyStyleToAll(const QString &styleName, bool stripOverrideTags = true);
     /** @brief Get true if a subtitle is dialogue */
     bool getIsDialogue(int id) const;
     /** @brief Set a subtitle as dialogue */
