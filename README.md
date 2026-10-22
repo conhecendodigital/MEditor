@@ -1,6 +1,14 @@
-![](data/pics/kdenlive-logo.png)
+# MEditor, baseado no Kdenlive (GPL-3.0)
 
-# Kdenlive
+**MEditor** é um editor de vídeo gratuito e de código aberto distribuído sob a licença **GPL-3.0**, baseado no [Kdenlive](https://kdenlive.org) (KDE).
+
+- **Licença:** GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL (veja a pasta `LICENSES/`).
+- **Código-fonte original (upstream):** [https://invent.kde.org/multimedia/kdenlive](https://invent.kde.org/multimedia/kdenlive)
+- **Aviso de marca:** *Kdenlive™* e seu logotipo são marcas registradas da KDE e.V. O MEditor é um projeto independente derivado do código-fonte aberto do Kdenlive e não é endossado nem afiliado oficialmente ao projeto KDE.
+
+---
+
+# Kdenlive (Upstream README)
 
 Kdenlive is a powerful, free and open-source video editor that brings professional-grade video editing capabilities to everyone. Whether you're creating a simple family video or working on a complex project, Kdenlive provides the tools you need to bring your vision to life.
 
