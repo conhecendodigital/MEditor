@@ -244,6 +244,9 @@ bool LayoutManagement::slotLoadLayout(LayoutInfo layout, bool onlyIfNoPrevious)
     if (!KdenliveSettings::showtitlebars()) {
         Q_EMIT pCore->hideBars(!KdenliveSettings::showtitlebars());
     }
+    if (pCore->window()) {
+        pCore->window()->applyOpenCutWorkspaceLayout();
+    }
     return true;
 }
 
@@ -277,6 +280,9 @@ bool LayoutManagement::slotLoadLayoutFromData(const QString &layoutData, bool on
     m_layoutSwitcher->setCurrentLayout(QString());
     if (!KdenliveSettings::showtitlebars() && m_firstLayoutLoaded) {
         Q_EMIT pCore->hideBars(!KdenliveSettings::showtitlebars());
+    }
+    if (pCore->window()) {
+        pCore->window()->applyOpenCutWorkspaceLayout();
     }
     m_firstLayoutLoaded = true;
     return true;

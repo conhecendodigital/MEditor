@@ -12,6 +12,7 @@
 #include <QImage>
 #include <QObject>
 #include <QUrl>
+#include <QVariantMap>
 
 class TimecodeDisplay;
 
@@ -181,6 +182,21 @@ public:
     const QString dragType();
     void setDragType(QString dragType);
 
+    // --- MEditor OpenCut / CapCut Interactive Video Canvas ---
+    Q_INVOKABLE QVariantMap canvasOverlayState() const;
+    Q_INVOKABLE QVariantMap selectCanvasZone(const QString &zone);
+    Q_INVOKABLE void togglePlay();
+    Q_INVOKABLE void jumpPrevCut();
+    Q_INVOKABLE void jumpNextCut();
+    Q_INVOKABLE bool splitActiveClipAtPlayhead();
+    Q_INVOKABLE bool rippleTrimActiveCut(int deltaFrames);
+    Q_INVOKABLE QString cycleSubtitlePreset();
+    Q_INVOKABLE void applySubtitlePresetFromMonitor(const QString &presetName);
+    Q_INVOKABLE void openSubtitleFontDialog();
+    Q_INVOKABLE bool updateActiveSubtitleText(const QString &newText);
+    Q_INVOKABLE void dragSubtitleToNormY(double normY);
+    Q_INVOKABLE bool updateFullVideoTitleText(const QString &newText);
+
 Q_SIGNALS:
     void positionChanged(int);
     void seekFinishedChanged();
@@ -235,11 +251,14 @@ Q_SIGNALS:
     void isKeyframeChanged();
     void cursorOutsideEffectChanged();
     void dragTypeChanged();
+    void canvasOverlayChanged();
     /** @brief Trigger a rebuild of the audio waveform */
     void rebuildAudio(int cid);
 
 private:
     VideoWidget *q;
+    QString m_selectedCanvasZone;
+    int m_presetCycleIndex{0};
     int m_position;
     int m_zoneIn;
     int m_zoneOut;

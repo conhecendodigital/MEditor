@@ -162,6 +162,8 @@ public:
     void raiseMonitor(bool clipMonitor, bool raise = false);
     /** @brief Raise (show) the audio mixer dock */
     void raiseMixer(bool raise = true);
+    void focusSubtitlesDock();
+    void applyOpenCutWorkspaceLayout();
 
     /** @brief Raise (show) the project bin
      * @param unconditionally if false, we won't raise the bin if docked with the project monitor */
@@ -286,6 +288,7 @@ private:
     KDDockWidgets::QtWidgets::DockWidget *m_undoViewDock{nullptr};
     KDDockWidgets::QtWidgets::DockWidget *m_mixerDock{nullptr};
     KDDockWidgets::QtWidgets::DockWidget *m_onlineResourcesDock{nullptr};
+    KDDockWidgets::QtWidgets::DockWidget *m_subtitlesDock{nullptr};
 
     KSelectAction *m_timeFormatButton;
     QAction *m_compositeAction;

@@ -27,12 +27,14 @@
 #include <QApplication>
 #include <QDir>
 #include <QDomDocument>
+#include <QElapsedTimer>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QMetaObject>
 #include <QPointer>
 #include <QStatusBar>
+#include <QThread>
 #include <QTimer>
 #include <QUrl>
 #include <QUuid>
@@ -1925,13 +1927,22 @@ bool Handlers::handleTitleAdd(const QJsonObject &params, QJsonObject &outResult,
         return false;
     }
 
-    // Garante que o clipe no Bin está pronto antes de inserir na timeline
-    for (int waitIter = 0; waitIter < 40; ++waitIter) {
+    // Garante que o clipe no Bin está pronto antes de inserir na timeline (evita deadlock em m_producerLock)
+    QElapsedTimer readyWait;
+    readyWait.start();
+    bool titleReady = false;
+    while (readyWait.elapsed() < 8000) {
         auto bClip = itemModel->getClipByBinID(binId);
         if (bClip && bClip->clipStatus() == FileStatus::StatusReady) {
+            titleReady = true;
             break;
         }
-        QCoreApplication::processEvents(QEventLoop::AllEvents, 25);
+        QThread::msleep(15);
+        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents, 20);
+    }
+    if (!titleReady) {
+        outError = QStringLiteral("Title bin clip %1 did not reach StatusReady in time").arg(binId);
+        return false;
     }
 
     // Resolve ou cria a trilha de vídeo superior (ex.: V3 Títulos)

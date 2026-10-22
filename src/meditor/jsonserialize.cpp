@@ -155,7 +155,7 @@ QJsonObject JsonSerialize::serializeClip(const std::shared_ptr<TimelineItemModel
         if (auto binClip = itemModel->getClipByBinID(binId)) {
             sourcePath = binClip->clipUrl();
             clipTypeInt = int(binClip->clipType());
-            if (binClip->clipType() == ClipType::Text) {
+            if (binClip->clipStatus() == FileStatus::StatusReady && binClip->clipType() == ClipType::Text) {
                 titleXmlData = binClip->getProducerProperty(QStringLiteral("xmldata"));
             }
         }
@@ -429,7 +429,7 @@ QJsonArray JsonSerialize::serializeBin()
         cObj.insert(QStringLiteral("playtime"), isReady ? clip->getFramePlaytime() : 0);
         cObj.insert(QStringLiteral("type"), int(clip->clipType()));
         cObj.insert(QStringLiteral("hasAudioAndVideo"), isReady ? clip->hasAudioAndVideo() : false);
-        if (clip->clipType() == ClipType::Text) {
+        if (isReady && clip->clipType() == ClipType::Text) {
             const QString xmlData = clip->getProducerProperty(QStringLiteral("xmldata"));
             const QString tText = extractTitleTextsFromXml(xmlData);
             cObj.insert(QStringLiteral("kind"), QStringLiteral("title"));

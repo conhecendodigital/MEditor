@@ -1511,7 +1511,9 @@ void EffectStackModel::importEffects(const std::weak_ptr<Mlt::Service> &service,
                     if (!style.isEmpty()) {
                         subProperties.insert(QStringLiteral("av.force_style"), style);
                     }
-                    pCore->window()->slotInitSubtitle(subProperties, uuid);
+                    if (pCore->window()) {
+                        pCore->window()->slotInitSubtitle(subProperties, uuid);
+                    }
                 } else if (auto ms = m_masterService.lock()) {
                     ms->attach(*filter.get());
                 }

@@ -279,14 +279,35 @@ Item {
             wrapMode: TextField.WordWrap
             horizontalAlignment: displayText == text ? TextInput.AlignHCenter : TextInput.AlignLeft
             background: Rectangle {
-                color: subtitleRoot.timeline.subtitlesLocked ? "#ff6666" : enabled ? "#fff" : '#ccccff'
+                radius: 6
+                color: subtitleRoot.timeline.subtitlesLocked ? "#EF4444" : (enabled ? "#FEF3C7" : (subtitleRoot.selected ? "#B45309" : "#D97706"))
                 border {
-                    color: subtitleRoot.selected ? subtitleRoot.timeline.selectionColor : "#000"
-                    width: subtitleRoot.isGrabbed ? 8 : 2
+                    color: subtitleRoot.selected ? "#FDE047" : "#78350F"
+                    width: subtitleRoot.isGrabbed ? 6 : (subtitleRoot.selected ? 2 : 1)
+                }
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 4
+                    height: Math.max(10, parent.height * 0.52)
+                    radius: 2
+                    color: "#FFFFFF"
+                    visible: subtitleRoot.selected && parent.width > 22
+                }
+                Rectangle {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 4
+                    height: Math.max(10, parent.height * 0.52)
+                    radius: 2
+                    color: "#FFFFFF"
+                    visible: subtitleRoot.selected && parent.width > 22
                 }
             }
-            color: 'black'
-            padding: 0
+            color: enabled ? '#111827' : '#FFFFFF'
+            padding: 2
         }
     }
     Item {

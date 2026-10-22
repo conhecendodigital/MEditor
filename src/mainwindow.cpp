@@ -276,7 +276,8 @@ void MainWindow::init()
     auto dockLib = addDock(i18n("Library"), QStringLiteral("library"), pCore->library(), KDDockWidgets::Location_OnRight);
     dockLib->close();
 
-    auto dockSubs = addDock(i18n("Subtitles"), QStringLiteral("subtitles"), pCore->subtitleWidget(), KDDockWidgets::Location_OnRight);
+    auto dockSubs = addDock(QStringLiteral("Legendas & Estilos"), QStringLiteral("subtitles"), pCore->subtitleWidget(), KDDockWidgets::Location_OnRight);
+    m_subtitlesDock = dockSubs;
     dockSubs->close();
 
     auto dockText = addDock(i18n("Speech Editor"), QStringLiteral("textedit"), pCore->textEditWidget(), KDDockWidgets::Location_OnRight);
@@ -518,7 +519,7 @@ void MainWindow::init()
     // Close non-general docks for the initial layout
     // only show important ones
     m_mixerDock->close();
-    m_projectBinDock->setAsCurrentTab();
+    applyOpenCutWorkspaceLayout();
 
     if (KdenliveSettings::lastCacheCheck().isNull()) {
         // Define a date for first check
@@ -3281,6 +3282,74 @@ void MainWindow::raiseMixer(bool raise)
             m_mixerDock->open();
         }
         m_mixerDock->setAsCurrentTab();
+    }
+}
+
+void MainWindow::focusSubtitlesDock()
+{
+    if (m_subtitlesDock) {
+        m_subtitlesDock->open();
+        m_subtitlesDock->setAsCurrentTab();
+    }
+}
+
+void MainWindow::applyOpenCutWorkspaceLayout()
+{
+    setStyleSheet(QStringLiteral(
+        "QMainWindow, QWidget { background-color: #0E1117; color: #E5E7EB; }"
+        "QToolBar { background-color: #131722; border-bottom: 1px solid #1F2937; spacing: 4px; padding: 3px; }"
+        "QMenuBar { background-color: #0B0D13; color: #E5E7EB; border-bottom: 1px solid #1F2937; }"
+        "QTabBar::tab { background-color: #131722; color: #9CA3AF; padding: 6px 12px; border-top-left-radius: 6px; border-top-right-radius: 6px; margin-right: 2px; font-weight: 600; }"
+        "QTabBar::tab:selected { background-color: #1F2937; color: #FFFFFF; border-bottom: 2px solid #3B82F6; }"
+        "QPushButton, QToolButton { background-color: #1C2230; color: #F3F4F6; border: 1px solid #2D3748; border-radius: 6px; padding: 4px 8px; }"
+        "QPushButton:hover, QToolButton:hover { background-color: #2563EB; border-color: #3B82F6; color: #FFFFFF; }"
+        "QComboBox, QSpinBox, QDoubleSpinBox, QLineEdit, QTextEdit, QPlainTextEdit { background-color: #161B26; color: #F9FAFB; border: 1px solid #2D3748; border-radius: 6px; padding: 3px 6px; }"
+        "QStatusBar { background-color: #0B0D13; color: #9CA3AF; border-top: 1px solid #1F2937; }"
+    ));
+
+    if (m_clipMonitorDock) {
+        m_clipMonitorDock->close();
+    }
+    if (m_compositionListDock) {
+        m_compositionListDock->close();
+    }
+    if (m_undoViewDock) {
+        m_undoViewDock->close();
+    }
+    if (m_effectListDock) {
+        m_effectListDock->close();
+    }
+    if (m_mixerDock) {
+        m_mixerDock->close();
+    }
+    if (m_onlineResourcesDock) {
+        m_onlineResourcesDock->close();
+    }
+    if (m_projectBinDock) {
+        m_projectBinDock->setTitle(QStringLiteral("Mídia & Cortes"));
+        m_projectBinDock->open();
+        if (m_subtitlesDock) {
+            m_projectBinDock->addDockWidgetAsTab(m_subtitlesDock);
+            m_subtitlesDock->open();
+        }
+        if (m_effectStackDock) {
+            m_effectStackDock->setTitle(QStringLiteral("Propriedades"));
+            m_projectBinDock->addDockWidgetAsTab(m_effectStackDock);
+        }
+        if (m_subtitlesDock) {
+            m_subtitlesDock->setAsCurrentTab();
+        } else {
+            m_projectBinDock->setAsCurrentTab();
+        }
+    }
+    if (m_projectMonitorDock) {
+        m_projectMonitorDock->setTitle(QStringLiteral("Preview Interativo (OpenCut / CapCut)"));
+        m_projectMonitorDock->open();
+        m_projectMonitorDock->setAsCurrentTab();
+    }
+    if (m_timelineDock) {
+        m_timelineDock->setTitle(QStringLiteral("Timeline Magnética"));
+        m_timelineDock->open();
     }
 }
 

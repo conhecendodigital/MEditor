@@ -16,8 +16,21 @@
 #include "markersortmodel.h"
 #include "monitormanager.h"
 #include "profiles/profilemodel.hpp"
+#include "bin/model/subtitlemodel.hpp"
+#include "dialogs/subtitleedit.h"
+#include "mainwindow.h"
+#include "meditor/apiserver.h"
+#include "meditor/handlers.h"
+#include "monitor/monitor.h"
+#include "project/projectmanager.h"
+#include "timeline2/model/timelineitemmodel.hpp"
 
+#include <QFont>
+#include <QFontDialog>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QUuid>
+#include <algorithm>
 
 #include <mlt++/MltConsumer.h>
 #include <mlt++/MltFilter.h>
@@ -857,4 +870,412 @@ void MonitorProxy::setAudioSynced(bool synced)
 void MonitorProxy::refreshAudio()
 {
     Q_EMIT rebuildAudio(m_clipId);
+}
+
+namespace {
+std::shared_ptr<TimelineItemModel> currentTimelineForMonitor()
+{
+    if (pCore->projectManager()) {
+        if (auto tl = pCore->projectManager()->getTimeline()) {
+            return tl;
+        }
+    }
+    if (KdenliveDoc *doc = pCore->currentDoc()) {
+        return doc->getTimeline(doc->uuid(), true);
+    }
+    return nullptr;
+}
+} // namespace
+
+QVariantMap MonitorProxy::canvasOverlayState() const
+{
+    QVariantMap state;
+    const int pos = qMax(0, m_position);
+    const double fps = pCore->getCurrentFps() > 0.0 ? pCore->getCurrentFps() : 60.0;
+    state.insert(QStringLiteral("frame"), pos);
+    state.insert(QStringLiteral("fps"), fps);
+    state.insert(QStringLiteral("selectedZone"), m_selectedCanvasZone);
+    state.insert(QStringLiteral("hasTitle"), false);
+    state.insert(QStringLiteral("titleClipId"), -1);
+    state.insert(QStringLiteral("titleText"), QString());
+    state.insert(QStringLiteral("hasMotion"), false);
+    state.insert(QStringLiteral("motionClipId"), -1);
+    state.insert(QStringLiteral("motionName"), QString());
+    state.insert(QStringLiteral("hasSubtitle"), false);
+    state.insert(QStringLiteral("subtitleId"), -1);
+    state.insert(QStringLiteral("subtitleText"), QString());
+    state.insert(QStringLiteral("subtitleStyle"), QStringLiteral("Costura"));
+    state.insert(QStringLiteral("subNormY"), 0.515);
+    state.insert(QStringLiteral("hasCamera"), false);
+    state.insert(QStringLiteral("cameraClipId"), -1);
+    state.insert(QStringLiteral("cameraName"), QString());
+    state.insert(QStringLiteral("cameraStartFrame"), 0);
+    state.insert(QStringLiteral("cameraDurationFrames"), 0);
+    state.insert(QStringLiteral("cutIndex"), 0);
+    state.insert(QStringLiteral("totalCuts"), 0);
+
+    QJsonObject tlResult;
+    int errCode = 0;
+    QString errMsg;
+    if (!MEditor::Handlers::dispatch(nullptr, QStringLiteral("timeline.get"), QJsonObject(), tlResult, errCode, errMsg)) {
+        return state;
+    }
+
+    const QJsonArray clips = tlResult.value(QStringLiteral("clips")).toArray();
+    struct CutEntry
+    {
+        int clipId;
+        int start;
+        int dur;
+        QString name;
+    };
+    QVector<CutEntry> v1Cuts;
+
+    for (const QJsonValue &val : clips) {
+        const QJsonObject c = val.toObject();
+        if (c.value(QStringLiteral("isAudio")).toBool()) {
+            continue;
+        }
+        const int cid = c.value(QStringLiteral("clipId")).toInt(-1);
+        const int cStart = c.value(QStringLiteral("position")).toInt(0);
+        const int cDur = c.value(QStringLiteral("duration")).toInt(0);
+        const int cEnd = cStart + cDur;
+        const QString trackTag = c.value(QStringLiteral("trackTag")).toString();
+        const int clipType = c.value(QStringLiteral("clipType")).toInt(0);
+        const QString cName = c.value(QStringLiteral("name")).toString();
+        const QString tText = c.value(QStringLiteral("titleText")).toString();
+
+        if (clipType == int(ClipType::Text) || trackTag == QLatin1String("V3") || !tText.isEmpty()) {
+            if (!state.value(QStringLiteral("hasTitle")).toBool() || (pos >= cStart && pos < cEnd)) {
+                state.insert(QStringLiteral("hasTitle"), true);
+                state.insert(QStringLiteral("titleClipId"), cid);
+                state.insert(QStringLiteral("titleText"), tText.isEmpty() ? cName : tText);
+            }
+        } else if (trackTag == QLatin1String("V2")) {
+            if (pos >= cStart && pos < cEnd) {
+                state.insert(QStringLiteral("hasMotion"), true);
+                state.insert(QStringLiteral("motionClipId"), cid);
+                state.insert(QStringLiteral("motionName"), cName);
+            }
+        } else if (trackTag == QLatin1String("V1")) {
+            v1Cuts.push_back({cid, cStart, cDur, cName});
+        }
+    }
+
+    std::sort(v1Cuts.begin(), v1Cuts.end(), [](const CutEntry &a, const CutEntry &b) { return a.start < b.start; });
+    state.insert(QStringLiteral("totalCuts"), v1Cuts.size());
+    for (int i = 0; i < v1Cuts.size(); ++i) {
+        const CutEntry &cut = v1Cuts.at(i);
+        if (pos >= cut.start && pos < cut.start + cut.dur) {
+            state.insert(QStringLiteral("hasCamera"), true);
+            state.insert(QStringLiteral("cameraClipId"), cut.clipId);
+            state.insert(QStringLiteral("cameraName"), cut.name);
+            state.insert(QStringLiteral("cameraStartFrame"), cut.start);
+            state.insert(QStringLiteral("cameraDurationFrames"), cut.dur);
+            state.insert(QStringLiteral("cutIndex"), i + 1);
+            break;
+        }
+    }
+
+    const QJsonArray subs = tlResult.value(QStringLiteral("subtitles")).toArray();
+    for (const QJsonValue &sVal : subs) {
+        const QJsonObject s = sVal.toObject();
+        const int sIn = s.value(QStringLiteral("startFrame")).toInt(0);
+        const int sOut = s.value(QStringLiteral("endFrame")).toInt(0);
+        if (pos >= sIn && pos <= sOut) {
+            const QString stName = s.value(QStringLiteral("style")).toString(QStringLiteral("Costura"));
+            state.insert(QStringLiteral("hasSubtitle"), true);
+            state.insert(QStringLiteral("subtitleId"), s.value(QStringLiteral("id")).toInt(-1));
+            state.insert(QStringLiteral("subtitleText"), s.value(QStringLiteral("text")).toString());
+            state.insert(QStringLiteral("subtitleStyle"), stName);
+            if (auto tl = currentTimelineForMonitor()) {
+                if (auto subModel = tl->getSubtitleModel()) {
+                    const auto &styles = subModel->getAllSubtitleStyles();
+                    auto it = styles.find(stName);
+                    if (it != styles.end()) {
+                        const int mv = it->second.marginV();
+                        const double normY = qBound(0.12, 1.0 - (double(mv) / 1920.0), 0.88);
+                        state.insert(QStringLiteral("subNormY"), normY);
+                    }
+                }
+            }
+            break;
+        }
+    }
+    return state;
+}
+
+QVariantMap MonitorProxy::selectCanvasZone(const QString &zone)
+{
+    m_selectedCanvasZone = zone;
+    const QVariantMap state = canvasOverlayState();
+    auto tl = currentTimelineForMonitor();
+    if (tl) {
+        int itemId = -1;
+        if (zone == QLatin1String("title")) {
+            itemId = state.value(QStringLiteral("titleClipId"), -1).toInt();
+        } else if (zone == QLatin1String("motion")) {
+            itemId = state.value(QStringLiteral("motionClipId"), -1).toInt();
+        } else if (zone == QLatin1String("subtitle")) {
+            itemId = state.value(QStringLiteral("subtitleId"), -1).toInt();
+        } else if (zone == QLatin1String("camera")) {
+            itemId = state.value(QStringLiteral("cameraClipId"), -1).toInt();
+        }
+        if (itemId >= 0) {
+            tl->requestSetSelection({itemId});
+        }
+        if (zone == QLatin1String("subtitle")) {
+            if (pCore->subtitleWidget() && itemId >= 0) {
+                pCore->subtitleWidget()->setActiveSubtitle(itemId);
+            }
+            if (pCore->window()) {
+                pCore->window()->focusSubtitlesDock();
+            }
+        }
+    }
+    Q_EMIT canvasOverlayChanged();
+    return canvasOverlayState();
+}
+
+void MonitorProxy::togglePlay()
+{
+    if (pCore->monitorManager() && pCore->monitorManager()->projectMonitor()) {
+        pCore->monitorManager()->projectMonitor()->slotPlay();
+    }
+}
+
+void MonitorProxy::jumpPrevCut()
+{
+    const QVariantMap state = canvasOverlayState();
+    QJsonObject tlResult;
+    int errCode = 0;
+    QString errMsg;
+    if (!MEditor::Handlers::dispatch(nullptr, QStringLiteral("timeline.get"), QJsonObject(), tlResult, errCode, errMsg)) {
+        return;
+    }
+    QVector<QPair<int, int>> v1Starts;
+    const QJsonArray clips = tlResult.value(QStringLiteral("clips")).toArray();
+    for (const QJsonValue &v : clips) {
+        const QJsonObject c = v.toObject();
+        if (c.value(QStringLiteral("trackTag")).toString() == QLatin1String("V1")) {
+            v1Starts.push_back({c.value(QStringLiteral("position")).toInt(0), c.value(QStringLiteral("clipId")).toInt(-1)});
+        }
+    }
+    std::sort(v1Starts.begin(), v1Starts.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
+    int targetFrame = 0;
+    int targetClipId = -1;
+    const int cur = qMax(0, m_position);
+    for (int i = v1Starts.size() - 1; i >= 0; --i) {
+        if (v1Starts.at(i).first < cur - 4) {
+            targetFrame = v1Starts.at(i).first;
+            targetClipId = v1Starts.at(i).second;
+            break;
+        }
+    }
+    if (targetClipId < 0 && !v1Starts.isEmpty()) {
+        targetFrame = v1Starts.first().first;
+        targetClipId = v1Starts.first().second;
+    }
+    setPosition(targetFrame);
+    if (targetClipId >= 0) {
+        if (auto tl = currentTimelineForMonitor()) {
+            tl->requestSetSelection({targetClipId});
+        }
+    }
+    Q_EMIT canvasOverlayChanged();
+}
+
+void MonitorProxy::jumpNextCut()
+{
+    QJsonObject tlResult;
+    int errCode = 0;
+    QString errMsg;
+    if (!MEditor::Handlers::dispatch(nullptr, QStringLiteral("timeline.get"), QJsonObject(), tlResult, errCode, errMsg)) {
+        return;
+    }
+    QVector<QPair<int, int>> v1Starts;
+    const QJsonArray clips = tlResult.value(QStringLiteral("clips")).toArray();
+    for (const QJsonValue &v : clips) {
+        const QJsonObject c = v.toObject();
+        if (c.value(QStringLiteral("trackTag")).toString() == QLatin1String("V1")) {
+            v1Starts.push_back({c.value(QStringLiteral("position")).toInt(0), c.value(QStringLiteral("clipId")).toInt(-1)});
+        }
+    }
+    std::sort(v1Starts.begin(), v1Starts.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
+    const int cur = qMax(0, m_position);
+    for (const auto &pair : v1Starts) {
+        if (pair.first > cur + 2) {
+            setPosition(pair.first);
+            if (auto tl = currentTimelineForMonitor()) {
+                tl->requestSetSelection({pair.second});
+            }
+            Q_EMIT canvasOverlayChanged();
+            return;
+        }
+    }
+}
+
+bool MonitorProxy::splitActiveClipAtPlayhead()
+{
+    const QVariantMap state = canvasOverlayState();
+    const int cid = state.value(QStringLiteral("cameraClipId"), -1).toInt();
+    const int cur = qMax(0, m_position);
+    if (cid < 0) {
+        return false;
+    }
+    QJsonObject outResult;
+    int errCode = 0;
+    QString errMsg;
+    const bool ok = MEditor::Handlers::dispatch(
+        nullptr, QStringLiteral("clip.cut"),
+        QJsonObject{{QStringLiteral("clipId"), cid}, {QStringLiteral("frame"), cur}, {QStringLiteral("simulateUser"), true}},
+        outResult, errCode, errMsg);
+    Q_EMIT canvasOverlayChanged();
+    return ok;
+}
+
+bool MonitorProxy::rippleTrimActiveCut(int deltaFrames)
+{
+    const QVariantMap state = canvasOverlayState();
+    const int cid = state.value(QStringLiteral("cameraClipId"), -1).toInt();
+    const int curDur = state.value(QStringLiteral("cameraDurationFrames"), 0).toInt();
+    const int cStart = state.value(QStringLiteral("cameraStartFrame"), 0).toInt();
+    if (cid < 0 || curDur <= 0) {
+        return false;
+    }
+    const int newDur = qMax(15, curDur + deltaFrames);
+    QJsonObject outResult;
+    int errCode = 0;
+    QString errMsg;
+    const bool ok = MEditor::Handlers::dispatch(
+        nullptr, QStringLiteral("clip.resize"),
+        QJsonObject{{QStringLiteral("clipId"), cid},
+                    {QStringLiteral("duration"), newDur},
+                    {QStringLiteral("edge"), QStringLiteral("right")},
+                    {QStringLiteral("ripple"), true},
+                    {QStringLiteral("simulateUser"), true}},
+        outResult, errCode, errMsg);
+    if (ok) {
+        setPosition(qMax(0, cStart + newDur - 3));
+    }
+    Q_EMIT canvasOverlayChanged();
+    return ok;
+}
+
+QString MonitorProxy::cycleSubtitlePreset()
+{
+    static const QStringList presets = {
+        QStringLiteral("Costura"),
+        QStringLiteral("Padrao_EditorIA"),
+        QStringLiteral("Destaque_Amarelo"),
+        QStringLiteral("Pilula_Verde"),
+        QStringLiteral("Pilula_Azul"),
+        QStringLiteral("Caixa_Alta_Impacto"),
+        QStringLiteral("Editorial_Limpa"),
+        QStringLiteral("Ancora_Amarela")
+    };
+    m_presetCycleIndex = (m_presetCycleIndex + 1) % presets.size();
+    const QString chosen = presets.at(m_presetCycleIndex);
+    applySubtitlePresetFromMonitor(chosen);
+    return chosen;
+}
+
+void MonitorProxy::applySubtitlePresetFromMonitor(const QString &presetName)
+{
+    if (presetName.isEmpty()) {
+        return;
+    }
+    QJsonObject outResult;
+    int errCode = 0;
+    QString errMsg;
+    MEditor::Handlers::dispatch(
+        nullptr, QStringLiteral("subtitle.style"),
+        QJsonObject{{QStringLiteral("preset"), presetName}, {QStringLiteral("applyToAll"), true}, {QStringLiteral("simulateUser"), true}},
+        outResult, errCode, errMsg);
+    Q_EMIT canvasOverlayChanged();
+}
+
+void MonitorProxy::openSubtitleFontDialog()
+{
+    bool ok = false;
+    const QFont initialFont(QStringLiteral("Arial"), 54, QFont::Bold);
+    const QFont chosen = QFontDialog::getFont(&ok, initialFont, pCore->window(), QStringLiteral("Escolher Fonte de Todas as Legendas"));
+    if (!ok) {
+        return;
+    }
+    QJsonObject outResult;
+    int errCode = 0;
+    QString errMsg;
+    MEditor::Handlers::dispatch(
+        nullptr, QStringLiteral("subtitle.style"),
+        QJsonObject{{QStringLiteral("fontName"), chosen.family()},
+                    {QStringLiteral("fontSize"), double(chosen.pointSize() > 16 ? chosen.pointSize() : 54)},
+                    {QStringLiteral("bold"), chosen.bold()},
+                    {QStringLiteral("italic"), chosen.italic()},
+                    {QStringLiteral("applyToAll"), true},
+                    {QStringLiteral("simulateUser"), true}},
+        outResult, errCode, errMsg);
+    Q_EMIT canvasOverlayChanged();
+}
+
+bool MonitorProxy::updateActiveSubtitleText(const QString &newText)
+{
+    const QString trimmed = newText.trimmed();
+    if (trimmed.isEmpty()) {
+        return false;
+    }
+    const QVariantMap state = canvasOverlayState();
+    const int subId = state.value(QStringLiteral("subtitleId"), -1).toInt();
+    if (subId < 0) {
+        return false;
+    }
+    QJsonObject outResult;
+    int errCode = 0;
+    QString errMsg;
+    const bool ok = MEditor::Handlers::dispatch(
+        nullptr, QStringLiteral("subtitle.edit"),
+        QJsonObject{{QStringLiteral("id"), subId}, {QStringLiteral("text"), trimmed}, {QStringLiteral("simulateUser"), true}},
+        outResult, errCode, errMsg);
+    Q_EMIT canvasOverlayChanged();
+    return ok;
+}
+
+void MonitorProxy::dragSubtitleToNormY(double normY)
+{
+    const double clamped = qBound(0.14, normY, 0.88);
+    const int marginV = qRound((1.0 - clamped) * 1920.0);
+    QJsonObject outResult;
+    int errCode = 0;
+    QString errMsg;
+    MEditor::Handlers::dispatch(
+        nullptr, QStringLiteral("subtitle.style"),
+        QJsonObject{{QStringLiteral("marginV"), marginV},
+                    {QStringLiteral("alignment"), 2},
+                    {QStringLiteral("applyToAll"), true},
+                    {QStringLiteral("simulateUser"), true}},
+        outResult, errCode, errMsg);
+    Q_EMIT canvasOverlayChanged();
+}
+
+bool MonitorProxy::updateFullVideoTitleText(const QString &newText)
+{
+    const QString trimmed = newText.trimmed();
+    if (trimmed.isEmpty()) {
+        return false;
+    }
+    QJsonObject outResult;
+    int errCode = 0;
+    QString errMsg;
+    bool ok = MEditor::Handlers::dispatch(
+        nullptr, QStringLiteral("title.edit"),
+        QJsonObject{{QStringLiteral("text"), trimmed}, {QStringLiteral("simulateUser"), true}},
+        outResult, errCode, errMsg);
+    if (!ok) {
+        ok = MEditor::Handlers::dispatch(
+            nullptr, QStringLiteral("title.add"),
+            QJsonObject{{QStringLiteral("text"), trimmed}, {QStringLiteral("track"), QStringLiteral("V3")}, {QStringLiteral("simulateUser"), true}},
+            outResult, errCode, errMsg);
+    }
+    Q_EMIT canvasOverlayChanged();
+    return ok;
 }

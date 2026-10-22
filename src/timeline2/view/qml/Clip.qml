@@ -20,6 +20,7 @@ import 'TimelineLogic.js' as Logic
 
 Rectangle {
     id: clipRoot
+    radius: 6
     SystemPalette { id: activePalette }
     FontMetrics {
         id: fontMetrics
@@ -289,19 +290,19 @@ Rectangle {
 
     function getColor() {
         if (clipRoot.clipState === K.PlaylistState.Disabled) {
-            return '#888'
+            return '#4B5563'
         }
         if (clipRoot.tagColor) {
             return clipRoot.tagColor
         }
         if (itemType === K.ClipType.Text) {
-            return clipRoot.timeline.titleColor
+            return '#2563EB'
         }
         if (itemType === K.ClipType.Image) {
-            return clipRoot.timeline.imageColor
+            return '#7C3AED'
         }
         if (itemType === K.ClipType.SlideShow) {
-            return clipRoot.timeline.slideshowColor
+            return '#7C3AED'
         }
         if (itemType === K.ClipType.Color) {
             var color = clipResource.substring(clipResource.length - 9)
@@ -310,7 +311,10 @@ Rectangle {
             }
             return '#' + color.substring(color.length - 8, color.length - 2)
         }
-        return isAudio? clipRoot.timeline.audioColor : clipRoot.timeline.videoColor
+        if (!isAudio && clipRoot.clipName && (clipRoot.clipName.indexOf("M1_") === 0 || clipRoot.clipName.indexOf("M2_") === 0 || clipRoot.clipName.indexOf("M3_") === 0 || clipRoot.clipName.toLowerCase().indexOf("motion") !== -1)) {
+            return '#6D28D9'
+        }
+        return isAudio ? '#1E293B' : '#0F766E'
     }
 
     property bool noThumbs: (isAudio || itemType === K.ClipType.Color || mltService === '')
@@ -506,7 +510,8 @@ Rectangle {
             // Border rectangle
             color: 'transparent'
             id: itemBorder
-            property int handleWidth: Math.max(2, Math.ceil(K.UiUtils.baseSizeMedium / 4))
+            radius: 6
+            property int handleWidth: Math.max(3, Math.ceil(K.UiUtils.baseSizeMedium / 3))
             anchors.fill: parent
             border.color: {
                 let placeholder = (clipRoot.clipStatus === K.FileStatus.StatusMissing
@@ -517,16 +522,38 @@ Rectangle {
                 }
 
                 if (clipRoot.selected) {
-                    return clipRoot.timeline.selectionColor
+                    return "#FBBF24"
                 }
 
                 if (clipRoot.grouped) {
-                    return clipRoot.timeline.groupColor
+                    return "#38BDF8"
                 }
 
-                return clipRoot.borderColor
+                return "#334155"
             }
-            border.width: clipRoot.isGrabbed ? 8 : 2
+            border.width: clipRoot.isGrabbed ? 6 : (clipRoot.selected ? 2 : 1)
+
+            // CapCut / OpenCut Left & Right Grab Handle Pills when Selected
+            Rectangle {
+                anchors.left: parent.left
+                anchors.leftMargin: 2
+                anchors.verticalCenter: parent.verticalCenter
+                width: 4
+                height: Math.max(12, parent.height * 0.52)
+                radius: 2
+                color: "#FFFFFF"
+                visible: clipRoot.selected && parent.width > 24
+            }
+            Rectangle {
+                anchors.right: parent.right
+                anchors.rightMargin: 2
+                anchors.verticalCenter: parent.verticalCenter
+                width: 4
+                height: Math.max(12, parent.height * 0.52)
+                radius: 2
+                color: "#FFFFFF"
+                visible: clipRoot.selected && parent.width > 24
+            }
             Rectangle {
                 id: trimOut
                 anchors.right: itemBorder.right
