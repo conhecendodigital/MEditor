@@ -14,6 +14,7 @@
 #include "project/projectmanager.h"
 #include "timeline2/model/timelineitemmodel.hpp"
 
+#include <QDomDocument>
 #include <QJsonValue>
 #include <QUrl>
 #include <QUuid>
@@ -24,6 +25,32 @@
 namespace MEditor {
 
 namespace {
+
+QString extractTitleTextsFromXml(const QString &xmlData)
+{
+    if (xmlData.isEmpty()) {
+        return {};
+    }
+    QDomDocument doc;
+    if (!doc.setContent(xmlData)) {
+        return {};
+    }
+    QStringList lines;
+    const QDomNodeList items = doc.elementsByTagName(QStringLiteral("item"));
+    for (int i = 0; i < items.count(); ++i) {
+        const QDomElement itemEl = items.at(i).toElement();
+        if (itemEl.attribute(QStringLiteral("type")) == QLatin1String("QGraphicsTextItem")) {
+            const QDomElement contentEl = itemEl.firstChildElement(QStringLiteral("content"));
+            if (!contentEl.isNull()) {
+                const QString txt = contentEl.text().trimmed();
+                if (!txt.isEmpty()) {
+                    lines.append(txt);
+                }
+            }
+        }
+    }
+    return lines.join(QLatin1Char('\n'));
+}
 
 QString readMltStringProperty(const std::shared_ptr<Mlt::Producer> &prod, const char *key)
 {
@@ -122,13 +149,24 @@ QJsonObject JsonSerialize::serializeClip(const std::shared_ptr<TimelineItemModel
     const int splitPartner = timeline->getClipSplitPartner(clipId);
 
     QString sourcePath;
+    QString titleXmlData;
+    int clipTypeInt = 0;
     if (auto itemModel = pCore->projectItemModel()) {
         if (auto binClip = itemModel->getClipByBinID(binId)) {
             sourcePath = binClip->clipUrl();
+            clipTypeInt = int(binClip->clipType());
+            if (binClip->clipType() == ClipType::Text) {
+                titleXmlData = binClip->getProducerProperty(QStringLiteral("xmldata"));
+            }
         }
     }
 
     std::shared_ptr<Mlt::Producer> prod = timeline->getClipProducer(clipId);
+    if (titleXmlData.isEmpty()) {
+        titleXmlData = readMltStringProperty(prod, "xmldata");
+    }
+    const QString titleText = extractTitleTextsFromXml(titleXmlData);
+
     QString meditorUid = readMltStringProperty(prod, "meditor:uid");
     if (meditorUid.isEmpty()) {
         meditorUid = readMltStringProperty(prod, "kdenlive:meditor_uid");
@@ -141,7 +179,11 @@ QJsonObject JsonSerialize::serializeClip(const std::shared_ptr<TimelineItemModel
     const QString reason = readMltStringProperty(prod, "meditor:reason");
     QString kind = readMltStringProperty(prod, "meditor:kind");
     if (kind.isEmpty()) {
-        kind = isAudio ? QStringLiteral("audio") : QStringLiteral("video");
+        if (!titleXmlData.isEmpty() || clipTypeInt == int(ClipType::Text)) {
+            kind = QStringLiteral("title");
+        } else {
+            kind = isAudio ? QStringLiteral("audio") : QStringLiteral("video");
+        }
     }
     if (sourcePath.isEmpty()) {
         sourcePath = readMltStringProperty(prod, "resource");
@@ -153,6 +195,12 @@ QJsonObject JsonSerialize::serializeClip(const std::shared_ptr<TimelineItemModel
     props.insert(QStringLiteral("meditor:kind"), kind);
     if (!sourcePath.isEmpty()) {
         props.insert(QStringLiteral("resource"), sourcePath);
+    }
+    if (!titleXmlData.isEmpty()) {
+        props.insert(QStringLiteral("xmldata"), titleXmlData);
+    }
+    if (!titleText.isEmpty()) {
+        props.insert(QStringLiteral("meditor:title_text"), titleText);
     }
     if (!reason.isEmpty()) {
         props.insert(QStringLiteral("meditor:reason"), reason);
@@ -189,6 +237,14 @@ QJsonObject JsonSerialize::serializeClip(const std::shared_ptr<TimelineItemModel
     obj.insert(QStringLiteral("meditor_uid"), meditorUid);
     obj.insert(QStringLiteral("uid"), meditorUid);
     obj.insert(QStringLiteral("kind"), kind);
+    obj.insert(QStringLiteral("clipType"), clipTypeInt);
+    if (!titleText.isEmpty()) {
+        obj.insert(QStringLiteral("titleText"), titleText);
+        obj.insert(QStringLiteral("text"), titleText);
+    }
+    if (!titleXmlData.isEmpty()) {
+        obj.insert(QStringLiteral("xmldata"), titleXmlData);
+    }
     if (!reason.isEmpty()) {
         obj.insert(QStringLiteral("reason"), reason);
     }
@@ -372,6 +428,18 @@ QJsonArray JsonSerialize::serializeBin()
         cObj.insert(QStringLiteral("playtime"), isReady ? clip->getFramePlaytime() : 0);
         cObj.insert(QStringLiteral("type"), int(clip->clipType()));
         cObj.insert(QStringLiteral("hasAudioAndVideo"), isReady ? clip->hasAudioAndVideo() : false);
+        if (clip->clipType() == ClipType::Text) {
+            const QString xmlData = clip->getProducerProperty(QStringLiteral("xmldata"));
+            const QString tText = extractTitleTextsFromXml(xmlData);
+            cObj.insert(QStringLiteral("kind"), QStringLiteral("title"));
+            if (!tText.isEmpty()) {
+                cObj.insert(QStringLiteral("titleText"), tText);
+                cObj.insert(QStringLiteral("text"), tText);
+            }
+            if (!xmlData.isEmpty()) {
+                cObj.insert(QStringLiteral("xmldata"), xmlData);
+            }
+        }
         binArr.append(cObj);
     }
     return binArr;

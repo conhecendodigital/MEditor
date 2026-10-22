@@ -26,6 +26,7 @@
 
 #include <QApplication>
 #include <QDir>
+#include <QDomDocument>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -38,6 +39,8 @@
 #include <atomic>
 #include <cmath>
 #include <mlt++/MltProducer.h>
+#include "dialogs/subtitleedit.h"
+#include "kdenlivesettings.h"
 
 namespace MEditor {
 
@@ -247,6 +250,21 @@ bool Handlers::dispatch(const QString &method, const QJsonObject &params, QJsonO
     }
     if (method == QLatin1String("subtitle.add")) {
         return run(&Handlers::handleSubtitleAdd);
+    }
+    if (method == QLatin1String("subtitle.edit") || method == QLatin1String("subtitle.update")) {
+        return run(&Handlers::handleSubtitleEdit);
+    }
+    if (method == QLatin1String("subtitle.delete") || method == QLatin1String("subtitle.remove")) {
+        return run(&Handlers::handleSubtitleDelete);
+    }
+    if (method == QLatin1String("track.add")) {
+        return run(&Handlers::handleTrackAdd);
+    }
+    if (method == QLatin1String("title.add")) {
+        return run(&Handlers::handleTitleAdd);
+    }
+    if (method == QLatin1String("title.edit") || method == QLatin1String("title.update")) {
+        return run(&Handlers::handleTitleEdit);
     }
     if (method == QLatin1String("ui.status")) {
         return run(&Handlers::handleUiStatus);
@@ -473,6 +491,16 @@ bool Handlers::handleProjectSave(const QJsonObject &params, QJsonObject &outResu
         const QFileInfo fi(rawPath);
         finalPath = fi.absoluteFilePath();
         const bool saveACopy = params.value(QStringLiteral("saveACopy")).toBool(false);
+        // Evita modal KMessageBox de sobrescrita de arquivo .ass lateral em KdenliveDoc::updateWorkFilesBeforeSave
+        const QString sidecarAss = finalPath + QStringLiteral(".ass");
+        if (QFile::exists(sidecarAss)) {
+            QFile::remove(sidecarAss);
+        }
+        if (!saveACopy) {
+            if (KdenliveDoc *doc = pCore->currentDoc()) {
+                doc->setUrl(QUrl::fromLocalFile(finalPath));
+            }
+        }
         saved = pCore->projectManager()->saveFileAs(finalPath, /*saveOverExistingFile=*/true, saveACopy);
     } else {
         saved = pCore->projectManager()->saveFile();
@@ -1179,13 +1207,36 @@ bool Handlers::handleSubtitleAdd(const QJsonObject &params, QJsonObject &outResu
     }
 
     std::shared_ptr<SubtitleModel> subModel = timeline->getSubtitleModel();
+    const bool wasCreatedNow = !subModel;
     if (!subModel) {
-        timeline->createSubtitleModel();
+        if (MainWindow *win = pCore->window()) {
+            // Inicializa e conecta a trilha de legendas e o painel SubtitleEdit na GUI!
+            win->slotEditSubtitle({});
+        }
         subModel = timeline->getSubtitleModel();
+        if (!subModel) {
+            timeline->createSubtitleModel();
+            subModel = timeline->getSubtitleModel();
+        }
     }
     if (!subModel) {
         outError = QStringLiteral("SubtitleModel could not be initialized");
         return false;
+    }
+
+    if (MainWindow *win = pCore->window()) {
+        if (pCore->subtitleWidget()) {
+            pCore->subtitleWidget()->setModel(subModel);
+        }
+        if (TimelineWidget *tlWidget = win->getCurrentTimeline()) {
+            KdenliveSettings::setShowSubtitles(true);
+            if (pCore->currentDoc()) {
+                pCore->currentDoc()->setSequenceProperty(timeline->uuid(), QStringLiteral("hidesubtitle"), 0);
+            }
+            if (wasCreatedNow) {
+                tlWidget->connectSubtitleModel(true);
+            }
+        }
     }
 
     const double fps = activeFps();
@@ -1242,6 +1293,488 @@ bool Handlers::handleSubtitleAdd(const QJsonObject &params, QJsonObject &outResu
     outResult.insert(QStringLiteral("startSeconds"), startTime.seconds());
     outResult.insert(QStringLiteral("endSeconds"), endTime.seconds());
     outResult.insert(QStringLiteral("text"), text);
+    outResult.insert(QStringLiteral("rev"), pCore->undoIndex());
+    return true;
+}
+
+bool Handlers::handleSubtitleEdit(const QJsonObject &params, QJsonObject &outResult, QString &outError)
+{
+    auto timeline = activeTimeline();
+    if (!timeline) {
+        outError = QStringLiteral("No active timeline");
+        return false;
+    }
+    std::shared_ptr<SubtitleModel> subModel = timeline->getSubtitleModel();
+    if (!subModel) {
+        outError = QStringLiteral("No active SubtitleModel");
+        return false;
+    }
+
+    const double fps = activeFps();
+    int subId = params.value(QStringLiteral("id")).toInt(params.value(QStringLiteral("subtitleId")).toInt(-1));
+    const int layer = params.value(QStringLiteral("layer")).toInt(0);
+    if (subId < 0) {
+        const int lookupFrame = parseFrameParam(params, QStringLiteral("startFrame"), QStringLiteral("startSeconds"), fps, -1);
+        if (lookupFrame >= 0) {
+            subId = subModel->getIdForStartPos(layer, GenTime(lookupFrame, fps));
+        }
+    }
+    if (subId < 0) {
+        outError = QStringLiteral("subtitle.edit requires valid 'id' or 'startFrame'");
+        return false;
+    }
+
+    const QString oldText = subModel->getText(subId);
+    const GenTime oldStart = subModel->getStartPosForId(subId);
+    const int oldStartFrame = oldStart.frames(fps);
+    const int oldPlaytime = subModel->getSubtitlePlaytime(subId);
+    const int oldEndFrame = oldStartFrame + oldPlaytime;
+
+    bool changed = false;
+    if (params.contains(QStringLiteral("text"))) {
+        const QString newText = params.value(QStringLiteral("text")).toString();
+        if (newText != oldText) {
+            subModel->editSubtitle(subId, newText, oldText);
+            changed = true;
+        }
+    }
+
+    const int reqStartFrame = parseFrameParam(params, QStringLiteral("newStartFrame"), QStringLiteral("newStartSeconds"), fps, -1);
+    const int reqEndFrame = parseFrameParam(params, QStringLiteral("endFrame"), QStringLiteral("endSeconds"), fps, -1);
+    if (reqStartFrame >= 0 && reqStartFrame != oldStartFrame) {
+        subModel->requestSubtitleMove(subId, layer, GenTime(reqStartFrame, fps));
+        changed = true;
+    }
+    if (reqEndFrame > 0 && reqEndFrame != oldEndFrame) {
+        const int currentStartFrame = subModel->getStartPosForId(subId).frames(fps);
+        if (reqEndFrame > currentStartFrame) {
+            subModel->resizeSubtitle(layer, currentStartFrame, reqEndFrame, oldEndFrame, true);
+            changed = true;
+        }
+    }
+
+    const GenTime updatedStart = subModel->getStartPosForId(subId);
+    const int updatedStartFrame = updatedStart.frames(fps);
+    const int updatedEndFrame = updatedStartFrame + subModel->getSubtitlePlaytime(subId);
+
+    outResult.insert(QStringLiteral("ok"), true);
+    outResult.insert(QStringLiteral("id"), subId);
+    outResult.insert(QStringLiteral("changed"), changed);
+    outResult.insert(QStringLiteral("startFrame"), updatedStartFrame);
+    outResult.insert(QStringLiteral("endFrame"), updatedEndFrame);
+    outResult.insert(QStringLiteral("text"), subModel->getText(subId));
+    outResult.insert(QStringLiteral("rev"), pCore->undoIndex());
+    return true;
+}
+
+bool Handlers::handleSubtitleDelete(const QJsonObject &params, QJsonObject &outResult, QString &outError)
+{
+    auto timeline = activeTimeline();
+    if (!timeline) {
+        outError = QStringLiteral("No active timeline");
+        return false;
+    }
+    std::shared_ptr<SubtitleModel> subModel = timeline->getSubtitleModel();
+    if (!subModel) {
+        outError = QStringLiteral("No active SubtitleModel");
+        return false;
+    }
+
+    const double fps = activeFps();
+    int subId = params.value(QStringLiteral("id")).toInt(params.value(QStringLiteral("subtitleId")).toInt(-1));
+    const int layer = params.value(QStringLiteral("layer")).toInt(0);
+    if (subId < 0) {
+        const int lookupFrame = parseFrameParam(params, QStringLiteral("startFrame"), QStringLiteral("startSeconds"), fps, -1);
+        if (lookupFrame >= 0) {
+            subId = subModel->getIdForStartPos(layer, GenTime(lookupFrame, fps));
+        }
+    }
+    if (subId < 0) {
+        outError = QStringLiteral("subtitle.delete requires valid 'id' or 'startFrame'");
+        return false;
+    }
+
+    const QString oldText = subModel->getText(subId);
+    const int startFrame = subModel->getStartPosForId(subId).frames(fps);
+    const int endFrame = startFrame + subModel->getSubtitlePlaytime(subId);
+    subModel->deleteSubtitle(layer, startFrame, endFrame, oldText);
+
+    outResult.insert(QStringLiteral("ok"), true);
+    outResult.insert(QStringLiteral("deletedId"), subId);
+    outResult.insert(QStringLiteral("rev"), pCore->undoIndex());
+    return true;
+}
+
+bool Handlers::handleTrackAdd(const QJsonObject &params, QJsonObject &outResult, QString &outError)
+{
+    auto timeline = activeTimeline();
+    if (!timeline) {
+        outError = QStringLiteral("No active timeline");
+        return false;
+    }
+
+    const bool audioTrack = params.value(QStringLiteral("audio")).toBool(params.value(QStringLiteral("isAudio")).toBool(false));
+    const QString trackName = params.value(QStringLiteral("name")).toString(params.value(QStringLiteral("trackName")).toString()).trimmed();
+    const QString wantedTag = params.value(QStringLiteral("trackId")).toString(params.value(QStringLiteral("tag")).toString()).trimmed();
+
+    // Se já existe uma trilha com esse nome ou tag, retorna ela de forma idempotente
+    for (int tid : timeline->getAllTracksIds()) {
+        if (timeline->isAudioTrack(tid) != audioTrack) {
+            continue;
+        }
+        const QString tag = timeline->getTrackTagById(tid);
+        const QString existingName = timeline->getTrackProperty(tid, QStringLiteral("kdenlive:track_name")).toString();
+        if ((!wantedTag.isEmpty() && tag.compare(wantedTag, Qt::CaseInsensitive) == 0) ||
+            (!trackName.isEmpty() && existingName.compare(trackName, Qt::CaseInsensitive) == 0)) {
+            outResult = JsonSerialize::serializeTrack(timeline, tid, activeFps(), nullptr);
+            outResult.insert(QStringLiteral("ok"), true);
+            outResult.insert(QStringLiteral("reused"), true);
+            outResult.insert(QStringLiteral("rev"), pCore->undoIndex());
+            return true;
+        }
+    }
+
+    int newTid = -1;
+    Fun localUndo = []() { return true; };
+    Fun localRedo = []() { return true; };
+
+    const bool ok = timeline->requestTrackInsertion(-1, newTid, trackName, audioTrack, localUndo, localRedo, /*addCompositing=*/true);
+    if (!ok || newTid < 0) {
+        outError = QStringLiteral("TimelineModel::requestTrackInsertion failed");
+        return false;
+    }
+
+    finalizeOperationUndo(localUndo, localRedo, QStringLiteral("Add track"));
+
+    outResult = JsonSerialize::serializeTrack(timeline, newTid, activeFps(), nullptr);
+    outResult.insert(QStringLiteral("ok"), true);
+    outResult.insert(QStringLiteral("reused"), false);
+    outResult.insert(QStringLiteral("rev"), pCore->undoIndex());
+    return true;
+}
+
+namespace {
+
+QString buildKdenliveTitleXml(const QString &text, int width, int height, int durationFrames, const QJsonObject &params)
+{
+    const QString customXml = params.value(QStringLiteral("xmldata")).toString().trimmed();
+    if (!customXml.isEmpty()) {
+        return customXml;
+    }
+
+    const QString font = params.value(QStringLiteral("font")).toString(QStringLiteral("Montserrat"));
+    const int fontSize = params.value(QStringLiteral("fontSize")).toInt(62);
+    const int fontWeight = params.value(QStringLiteral("fontWeight")).toInt(700);
+    const QString fontColor = params.value(QStringLiteral("fontColor")).toString(QStringLiteral("255,255,255,255"));
+    const QString outlineColor = params.value(QStringLiteral("outlineColor")).toString(QStringLiteral("21,23,28,255"));
+    const double outlineWidth = params.value(QStringLiteral("outlineWidth")).toDouble(3.0);
+    const int align = params.value(QStringLiteral("align")).toInt(4); // 4 = HCenter
+    const int posX = params.value(QStringLiteral("x")).toInt(80);
+    const int posY = params.value(QStringLiteral("y")).toInt(130);
+
+    // Opcional: caixa de fundo arredondada (card de título estilo Edição no Ponto)
+    const bool showBox = params.value(QStringLiteral("showBox")).toBool(true);
+    const QString boxColor = params.value(QStringLiteral("boxColor")).toString(QStringLiteral("15,23,42,230"));
+    const QString borderColor = params.value(QStringLiteral("borderColor")).toString(QStringLiteral("47,123,255,255"));
+    const int boxX = params.value(QStringLiteral("boxX")).toInt(50);
+    const int boxY = params.value(QStringLiteral("boxY")).toInt(95);
+    const int boxW = params.value(QStringLiteral("boxWidth")).toInt(width - 100);
+    const int boxH = params.value(QStringLiteral("boxHeight")).toInt(210);
+
+    QDomDocument doc;
+    QDomElement root = doc.createElement(QStringLiteral("kdenlivetitle"));
+    root.setAttribute(QStringLiteral("width"), width);
+    root.setAttribute(QStringLiteral("height"), height);
+    root.setAttribute(QStringLiteral("out"), std::max(1, durationFrames - 1));
+    root.setAttribute(QStringLiteral("LC_NUMERIC"), QStringLiteral("C"));
+    doc.appendChild(root);
+
+    if (showBox) {
+        QDomElement rectItem = doc.createElement(QStringLiteral("item"));
+        rectItem.setAttribute(QStringLiteral("type"), QStringLiteral("QGraphicsRectItem"));
+        rectItem.setAttribute(QStringLiteral("z-index"), 0);
+        QDomElement rPos = doc.createElement(QStringLiteral("position"));
+        rPos.setAttribute(QStringLiteral("x"), boxX);
+        rPos.setAttribute(QStringLiteral("y"), boxY);
+        QDomElement rTrans = doc.createElement(QStringLiteral("transform"));
+        rTrans.appendChild(doc.createTextNode(QStringLiteral("1,0,0,0,1,0,0,0,1")));
+        rPos.appendChild(rTrans);
+        rectItem.appendChild(rPos);
+
+        QDomElement rContent = doc.createElement(QStringLiteral("content"));
+        rContent.setAttribute(QStringLiteral("brushcolor"), boxColor);
+        rContent.setAttribute(QStringLiteral("pencolor"), borderColor);
+        rContent.setAttribute(QStringLiteral("penwidth"), 4);
+        rContent.setAttribute(QStringLiteral("rect"), QStringLiteral("0,0,%1,%2").arg(boxW).arg(boxH));
+        rectItem.appendChild(rContent);
+        root.appendChild(rectItem);
+    }
+
+    QDomElement txtItem = doc.createElement(QStringLiteral("item"));
+    txtItem.setAttribute(QStringLiteral("type"), QStringLiteral("QGraphicsTextItem"));
+    txtItem.setAttribute(QStringLiteral("z-index"), 1);
+
+    QDomElement tPos = doc.createElement(QStringLiteral("position"));
+    tPos.setAttribute(QStringLiteral("x"), posX);
+    tPos.setAttribute(QStringLiteral("y"), posY);
+    QDomElement tTrans = doc.createElement(QStringLiteral("transform"));
+    tTrans.appendChild(doc.createTextNode(QStringLiteral("1,0,0,0,1,0,0,0,1")));
+    tPos.appendChild(tTrans);
+    txtItem.appendChild(tPos);
+
+    QDomElement tContent = doc.createElement(QStringLiteral("content"));
+    tContent.setAttribute(QStringLiteral("font"), font);
+    tContent.setAttribute(QStringLiteral("font-pixel-size"), fontSize);
+    tContent.setAttribute(QStringLiteral("font-weight"), fontWeight);
+    tContent.setAttribute(QStringLiteral("font-italic"), 0);
+    tContent.setAttribute(QStringLiteral("font-underline"), 0);
+    tContent.setAttribute(QStringLiteral("font-color"), fontColor);
+    tContent.setAttribute(QStringLiteral("font-outline-color"), outlineColor);
+    tContent.setAttribute(QStringLiteral("font-outline"), QString::number(outlineWidth, 'f', 1));
+    tContent.setAttribute(QStringLiteral("alignment"), align);
+    tContent.setAttribute(QStringLiteral(" box-width"), width - 2 * posX);
+    tContent.setAttribute(QStringLiteral("box-width"), width - 2 * posX);
+    tContent.appendChild(doc.createTextNode(text));
+    txtItem.appendChild(tContent);
+    root.appendChild(txtItem);
+
+    QDomElement startVp = doc.createElement(QStringLiteral("startviewport"));
+    startVp.setAttribute(QStringLiteral("rect"), QStringLiteral("0,0,%1,%2").arg(width).arg(height));
+    root.appendChild(startVp);
+
+    QDomElement endVp = doc.createElement(QStringLiteral("endviewport"));
+    endVp.setAttribute(QStringLiteral("rect"), QStringLiteral("0,0,%1,%2").arg(width).arg(height));
+    root.appendChild(endVp);
+
+    QDomElement bg = doc.createElement(QStringLiteral("background"));
+    bg.setAttribute(QStringLiteral("color"), QStringLiteral("0,0,0,0"));
+    root.appendChild(bg);
+
+    return doc.toString(-1);
+}
+
+} // namespace
+
+bool Handlers::handleTitleAdd(const QJsonObject &params, QJsonObject &outResult, QString &outError)
+{
+    auto timeline = activeTimeline();
+    if (!timeline) {
+        outError = QStringLiteral("No active timeline");
+        return false;
+    }
+    auto itemModel = pCore->projectItemModel();
+    if (!itemModel) {
+        outError = QStringLiteral("ProjectItemModel is not available");
+        return false;
+    }
+
+    const QString text = params.value(QStringLiteral("text")).toString(params.value(QStringLiteral("title")).toString()).trimmed();
+    if (text.isEmpty() && !params.contains(QStringLiteral("xmldata"))) {
+        outError = QStringLiteral("title.add requires 'text' or 'xmldata'");
+        return false;
+    }
+
+    const double fps = activeFps();
+    const QSize frameSize = pCore->getCurrentFrameSize();
+    KdenliveDoc *doc = pCore->currentDoc();
+    const int width = doc ? doc->width() : frameSize.width();
+    const int height = doc ? doc->height() : frameSize.height();
+
+    int position = parseFrameParam(params, QStringLiteral("position"), QStringLiteral("positionSeconds"), fps, -1);
+    if (position < 0) {
+        position = parseFrameParam(params, QStringLiteral("pos"), QStringLiteral("posSeconds"), fps, 0);
+    }
+
+    int durationFrames = parseFrameParam(params, QStringLiteral("duration"), QStringLiteral("durationSeconds"), fps, -1);
+    if (durationFrames <= 0) {
+        durationFrames = parseFrameParam(params, QStringLiteral("durationFrames"), QStringLiteral("durationSec"), fps, -1);
+    }
+    const bool fullVideo = params.value(QStringLiteral("fullVideo")).toBool(durationFrames <= 0);
+    if (fullVideo || durationFrames <= 0) {
+        const int tlDur = timeline->duration();
+        durationFrames = tlDur > position ? (tlDur - position) : int(std::llround(5.0 * fps));
+    }
+
+    const QString clipName = params.value(QStringLiteral("name"))
+                                 .toString(QStringLiteral("Título: %1").arg(text.left(42)));
+    const QString xmlData = buildKdenliveTitleXml(text, width, height, durationFrames, params);
+
+    std::unordered_map<QString, QString> props;
+    props[QStringLiteral("xmldata")] = xmlData;
+    props[QStringLiteral("kdenlive:duration")] = QString::number(durationFrames);
+    props[QStringLiteral("length")] = QString::number(std::max(durationFrames, int(std::llround(3600.0 * fps))));
+
+    const QString folderId = params.value(QStringLiteral("folderId")).toString(QStringLiteral("-1"));
+    const QString binId = ClipCreator::createTitleClip(props, durationFrames, clipName, folderId, itemModel);
+    if (binId == QLatin1String("-1") || binId.isEmpty()) {
+        outError = QStringLiteral("ClipCreator::createTitleClip failed");
+        return false;
+    }
+
+    // Garante que o clipe no Bin está pronto antes de inserir na timeline
+    for (int waitIter = 0; waitIter < 40; ++waitIter) {
+        auto bClip = itemModel->getClipByBinID(binId);
+        if (bClip && bClip->clipStatus() == FileStatus::StatusReady) {
+            break;
+        }
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 25);
+    }
+
+    // Resolve ou cria a trilha de vídeo superior (ex.: V3 Títulos)
+    QJsonValue trackVal = params.contains(QStringLiteral("trackId")) ? params.value(QStringLiteral("trackId"))
+                                                                     : params.value(QStringLiteral("track"));
+    int trackId = -1;
+    if (!trackVal.isUndefined() && !trackVal.isNull()) {
+        const QString wanted = trackVal.toString().trimmed();
+        for (int tid : timeline->getAllTracksIds()) {
+            if (timeline->isAudioTrack(tid)) {
+                continue;
+            }
+            const QString tag = timeline->getTrackTagById(tid);
+            const QString tName = timeline->getTrackProperty(tid, QStringLiteral("kdenlive:track_name")).toString();
+            if (tag.compare(wanted, Qt::CaseInsensitive) == 0 ||
+                (!tName.isEmpty() && tName.compare(wanted, Qt::CaseInsensitive) == 0)) {
+                trackId = tid;
+                break;
+            }
+        }
+        if (trackId < 0 && !wanted.isEmpty()) {
+            Fun tUndo = []() { return true; };
+            Fun tRedo = []() { return true; };
+            int newTid = -1;
+            if (timeline->requestTrackInsertion(-1, newTid, QStringLiteral("Títulos (MEditor)"), false, tUndo, tRedo, true)) {
+                finalizeOperationUndo(tUndo, tRedo, QStringLiteral("Add title track"));
+                trackId = newTid;
+            }
+        }
+    }
+    if (trackId < 0) {
+        const QList<int> vTracks = timeline->getTracksIds(false);
+        if (!vTracks.isEmpty()) {
+            trackId = vTracks.last();
+        }
+    }
+    if (trackId < 0) {
+        outError = QStringLiteral("No video track available for title.add");
+        return false;
+    }
+
+    const int inFrame = 0;
+    const int outFrame = std::max(0, durationFrames - 1);
+    const QString insertSpec = QStringLiteral("V%1/%2/%3").arg(binId).arg(inFrame).arg(outFrame);
+
+    int newClipId = -1;
+    Fun localUndo = []() { return true; };
+    Fun localRedo = []() { return true; };
+    bool inserted = timeline->requestClipInsertion(insertSpec, trackId, position, newClipId, /*logUndo=*/false,
+                                                   /*refreshView=*/true, /*useTargets=*/false, localUndo, localRedo);
+    if (!inserted || newClipId < 0) {
+        localUndo = []() { return true; };
+        localRedo = []() { return true; };
+        inserted = timeline->requestClipInsertion(QStringLiteral("%1/%2/%3").arg(binId).arg(inFrame).arg(outFrame),
+                                                  trackId, position, newClipId, /*logUndo=*/false,
+                                                  /*refreshView=*/true, /*useTargets=*/false, localUndo, localRedo);
+    }
+    if (!inserted || newClipId < 0) {
+        outError = QStringLiteral("Failed to insert title clip (binId=%1) on trackId=%2 at pos=%3")
+                       .arg(binId)
+                       .arg(trackId)
+                       .arg(position);
+        return false;
+    }
+
+    const QString uid = params.value(QStringLiteral("meditor_uid"))
+                            .toString(params.value(QStringLiteral("uid")).toString(QStringLiteral("title-main")));
+    setClipCustomProperty(timeline, newClipId, "meditor:uid", uid);
+    setClipCustomProperty(timeline, newClipId, "kdenlive:meditor_uid", uid);
+    setClipCustomProperty(timeline, newClipId, "meditor:kind", QStringLiteral("title"));
+    setClipCustomProperty(timeline, newClipId, "meditor:title_text", text);
+
+    finalizeOperationUndo(localUndo, localRedo, QStringLiteral("Add title clip"));
+
+    outResult = JsonSerialize::serializeClip(timeline, newClipId, fps);
+    outResult.insert(QStringLiteral("ok"), true);
+    outResult.insert(QStringLiteral("binId"), binId);
+    outResult.insert(QStringLiteral("titleText"), text);
+    outResult.insert(QStringLiteral("rev"), pCore->undoIndex());
+    return true;
+}
+
+bool Handlers::handleTitleEdit(const QJsonObject &params, QJsonObject &outResult, QString &outError)
+{
+    auto timeline = activeTimeline();
+    auto itemModel = pCore->projectItemModel();
+    if (!timeline || !itemModel) {
+        outError = QStringLiteral("No active timeline or ProjectItemModel");
+        return false;
+    }
+
+    QString binId = params.value(QStringLiteral("binId")).toString().trimmed();
+    int clipId = params.value(QStringLiteral("clipId")).toInt(params.value(QStringLiteral("id")).toInt(-1));
+
+    if (binId.isEmpty() && clipId >= 0 && timeline->isClip(clipId)) {
+        binId = timeline->getClipBinId(clipId);
+    }
+    if (binId.isEmpty()) {
+        // Procura o primeiro clipe de título no Bin
+        for (const QString &candId : itemModel->getAllClipIds()) {
+            auto c = itemModel->getClipByBinID(candId);
+            if (c && c->clipType() == ClipType::Text) {
+                binId = candId;
+                break;
+            }
+        }
+    }
+    auto binClip = itemModel->getClipByBinID(binId);
+    if (!binClip || binClip->clipType() != ClipType::Text) {
+        outError = QStringLiteral("Title clip not found (binId=%1, clipId=%2)").arg(binId).arg(clipId);
+        return false;
+    }
+
+    const QString newText = params.value(QStringLiteral("text")).toString(params.value(QStringLiteral("title")).toString());
+    const double fps = activeFps();
+    KdenliveDoc *doc = pCore->currentDoc();
+    const QSize frameSize = pCore->getCurrentFrameSize();
+    const int width = doc ? doc->width() : frameSize.width();
+    const int height = doc ? doc->height() : frameSize.height();
+    const int durationFrames = int(binClip->frameDuration()) > 0 ? int(binClip->frameDuration()) : int(std::llround(36.0 * fps));
+
+    const QString xmlData = buildKdenliveTitleXml(newText, width, height, durationFrames, params);
+    QMap<QString, QString> newProps;
+    newProps.insert(QStringLiteral("xmldata"), xmlData);
+    newProps.insert(QStringLiteral("kdenlive:clipname"), QStringLiteral("Título: %1").arg(newText.left(42)));
+    newProps.insert(QStringLiteral("force_reload"), QStringLiteral("1"));
+
+    QMap<QString, QString> oldProps = binClip->currentProperties(newProps);
+    oldProps.insert(QStringLiteral("force_reload"), QStringLiteral("1"));
+
+    if (pCore->bin()) {
+        pCore->bin()->slotEditClipCommand(binId, oldProps, newProps);
+    } else {
+        binClip->setProperties(newProps, true);
+    }
+
+    if (clipId >= 0 && timeline->isClip(clipId)) {
+        setClipCustomProperty(timeline, clipId, "meditor:title_text", newText);
+    }
+
+    const int reqDuration = parseFrameParam(params, QStringLiteral("duration"), QStringLiteral("durationSeconds"), fps, -1);
+    const bool fullVideo = params.value(QStringLiteral("fullVideo")).toBool(false);
+    if ((reqDuration > 0 || fullVideo) && clipId >= 0 && timeline->isClip(clipId)) {
+        int targetSize = fullVideo ? std::max(1, timeline->duration() - timeline->getClipPosition(clipId)) : reqDuration;
+        Fun rUndo = []() { return true; };
+        Fun rRedo = []() { return true; };
+        if (timeline->requestItemResize(clipId, targetSize, /*right=*/true, /*logUndo=*/false, rUndo, rRedo, /*blockUndo=*/false)) {
+            finalizeOperationUndo(rUndo, rRedo, QStringLiteral("Resize title clip"));
+        }
+    }
+
+    pCore->refreshProjectMonitorOnce();
+
+    outResult.insert(QStringLiteral("ok"), true);
+    outResult.insert(QStringLiteral("binId"), binId);
+    outResult.insert(QStringLiteral("clipId"), clipId);
+    outResult.insert(QStringLiteral("titleText"), newText);
     outResult.insert(QStringLiteral("rev"), pCore->undoIndex());
     return true;
 }

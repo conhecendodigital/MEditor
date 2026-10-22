@@ -92,9 +92,14 @@ public:
     bool handleClipMove(const QJsonObject &params, QJsonObject &outResult, QString &outError);
     bool handleClipSpeed(const QJsonObject &params, QJsonObject &outResult, QString &outError);
 
-    // --- Marcadores (Guides) e Legendas (Subtitles) ---
+    // --- Marcadores (Guides), Legendas (Subtitles), Trilhas e Títulos ---
     bool handleMarkerAdd(const QJsonObject &params, QJsonObject &outResult, QString &outError);
     bool handleSubtitleAdd(const QJsonObject &params, QJsonObject &outResult, QString &outError);
+    bool handleSubtitleEdit(const QJsonObject &params, QJsonObject &outResult, QString &outError);
+    bool handleSubtitleDelete(const QJsonObject &params, QJsonObject &outResult, QString &outError);
+    bool handleTrackAdd(const QJsonObject &params, QJsonObject &outResult, QString &outError);
+    bool handleTitleAdd(const QJsonObject &params, QJsonObject &outResult, QString &outError);
+    bool handleTitleEdit(const QJsonObject &params, QJsonObject &outResult, QString &outError);
 
     // --- UI e Playhead ---
     bool handleUiStatus(const QJsonObject &params, QJsonObject &outResult, QString &outError);
